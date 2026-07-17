@@ -110,9 +110,9 @@ describe('symbolsExtractor: sample-repo ground truth', () => {
     expect(byName(symbols, 'decodeToken')?.exported).toBe(false);
   });
 
-  it('finds hooks as functions in useDebounce.ts (hook kind refined in #18)', async () => {
+  it('finds useDebounce (refined to hook kind by the react-hooks pass)', async () => {
     const source = readFileSync(join(SRC, 'hooks/useDebounce.ts'), 'utf8');
     const symbols = await symbolsOf('hooks/useDebounce.ts', source);
-    expect(byName(symbols, 'useDebounce')?.kind).toBe('function');
+    expect(byName(symbols, 'useDebounce')?.kind).toBe('hook');
   });
 });
