@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.twograph/*.db
+.twograph/cache/
+*.log
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+models/*.onnx
