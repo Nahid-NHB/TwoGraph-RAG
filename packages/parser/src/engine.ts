@@ -2,7 +2,12 @@ import { extname } from 'node:path';
 import { hashContent, ParseError, type ParsedFile } from '@twograph/core';
 import { Language, Parser, type Tree } from 'web-tree-sitter';
 import { defaultExtractors } from './extractors/index.js';
-import { defaultRegistry, type LanguagePlugin, type ParserRegistry } from './registry.js';
+import {
+  defaultRegistry,
+  type ExtractionSink,
+  type LanguagePlugin,
+  type ParserRegistry,
+} from './registry.js';
 
 let runtimeReady: Promise<void> | undefined;
 
@@ -46,7 +51,7 @@ export class ParserEngine {
   async parseFile(repo: string, path: string, source: string): Promise<ParsedFile> {
     const { tree, plugin } = await this.parse(path, source);
     const language = plugin.languageFor(extname(path).toLowerCase());
-    const sink: Pick<ParsedFile, 'symbols' | 'imports' | 'exports' | 'references'> = {
+    const sink: ExtractionSink = {
       symbols: [],
       imports: [],
       exports: [],

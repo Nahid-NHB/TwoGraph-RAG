@@ -19,7 +19,9 @@ export interface LanguagePlugin {
 }
 
 /** Mutable accumulator extractors write into; becomes the ParsedFile. */
-export type ExtractionSink = Pick<ParsedFile, 'symbols' | 'imports' | 'exports' | 'references'>;
+export type ExtractionSink = Pick<ParsedFile, 'symbols' | 'imports' | 'exports' | 'references'> & {
+  fileDoc?: string;
+};
 
 export interface ExtractionContext {
   readonly repo: string;

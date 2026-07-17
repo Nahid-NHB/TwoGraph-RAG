@@ -131,6 +131,8 @@ export const parsedFileSchema = z.object({
   imports: z.array(importRecordSchema),
   exports: z.array(exportRecordSchema),
   references: z.array(referenceRecordSchema),
+  /** Summary from a top-of-file doc block with no adjacent symbol. */
+  fileDoc: z.string().optional(),
 });
 export type ParsedFile = z.infer<typeof parsedFileSchema>;
 
