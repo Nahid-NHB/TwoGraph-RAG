@@ -57,6 +57,7 @@ twograph-rag/
 ```
 
 Conventions:
+
 - Each package: `src/`, `test/` (unit beside integration under `test/integration/`), `package.json` with `exports` map, `tsconfig.json` extending base.
 - Tests: `*.test.ts` (unit, no external services), `*.int.test.ts` (integration, needs docker stack).
 - Internal imports via workspace protocol `"@twograph/core": "workspace:*"`.

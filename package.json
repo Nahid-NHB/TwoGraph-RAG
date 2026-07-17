@@ -10,9 +10,22 @@
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:boundaries": "node scripts/verify-boundaries.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "typescript": "^5.7.3"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.7.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import-x": "^4.17.1",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.5",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.64.0"
   }
 }
