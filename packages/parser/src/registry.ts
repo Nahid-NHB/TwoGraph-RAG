@@ -71,8 +71,9 @@ export class ParserRegistry {
  * Default registry: JavaScript (also covers JSX — the JS grammar includes it),
  * TypeScript, and TSX. Extractors are registered per grammar as they land.
  */
-export function defaultRegistry(extractors: readonly Extractor[] = []): ParserRegistry {
+export function defaultRegistry(extractors?: readonly Extractor[]): ParserRegistry {
   const registry = new ParserRegistry();
+  extractors ??= [];
   registry.register({
     id: 'javascript',
     extensions: ['.js', '.mjs', '.cjs', '.jsx'],

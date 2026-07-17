@@ -59,8 +59,9 @@ describe('engine', () => {
     await expect(engine.parse('style.css', 'body{}')).rejects.toThrow(ParseError);
   });
 
-  it('parseFile returns a valid ParsedFile envelope (no extractors yet)', async () => {
-    const parsed = await engine.parseFile('sample', 'src/a.ts', 'export const one = 1;');
+  it('parseFile returns a valid ParsedFile envelope (extractor-less registry)', async () => {
+    const bare = new ParserEngine(defaultRegistry([]));
+    const parsed = await bare.parseFile('sample', 'src/a.ts', 'export const one = 1;');
     expect(parsed).toMatchObject({
       repo: 'sample',
       path: 'src/a.ts',

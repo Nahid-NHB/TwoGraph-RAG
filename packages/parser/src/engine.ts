@@ -1,6 +1,7 @@
 import { extname } from 'node:path';
 import { hashContent, ParseError, type ParsedFile } from '@twograph/core';
 import { Language, Parser, type Tree } from 'web-tree-sitter';
+import { defaultExtractors } from './extractors/index.js';
 import { defaultRegistry, type LanguagePlugin, type ParserRegistry } from './registry.js';
 
 let runtimeReady: Promise<void> | undefined;
@@ -19,7 +20,7 @@ export class ParserEngine {
   private readonly languages = new Map<string, Language>();
   private readonly parsers = new Map<string, Parser>();
 
-  constructor(registry: ParserRegistry = defaultRegistry()) {
+  constructor(registry: ParserRegistry = defaultRegistry(defaultExtractors())) {
     this.registry = registry;
   }
 
