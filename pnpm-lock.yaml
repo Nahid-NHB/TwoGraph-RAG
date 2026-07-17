@@ -63,6 +63,15 @@ importers:
         specifier: ^4.1.10
         version: 4.1.10(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(vite@8.1.5(@types/node@26.1.1)(jiti@2.6.1)(yaml@2.9.0))
 
+  packages/cli:
+    dependencies:
+      '@twograph/core':
+        specifier: workspace:*
+        version: link:../core
+      commander:
+        specifier: ^14.0.2
+        version: 14.0.3
+
   packages/core:
     dependencies:
       pino:
@@ -817,6 +826,10 @@ packages:
 
   cliui@9.0.1:
     resolution: {integrity: sha512-k7ndgKhwoQveBL+/1tqGJYNz097I7WOvwbmmU2AR5+magtbjPWQTS1C5vzGkBC8Ym8UWRzfKUzUUqFLypY4Q+w==}
+    engines: {node: '>=20'}
+
+  commander@14.0.3:
+    resolution: {integrity: sha512-H+y0Jo/T1RZ9qPP4Eh1pkcQcLRglraJaSLoyOtHxu6AapkjWVCy2Sit1QQ4x3Dng8qDlSsZEet7g5Pq06MvTgw==}
     engines: {node: '>=20'}
 
   comment-parser@1.4.7:
@@ -2683,6 +2696,8 @@ snapshots:
       string-width: 7.2.0
       strip-ansi: 7.2.0
       wrap-ansi: 9.0.2
+
+  commander@14.0.3: {}
 
   comment-parser@1.4.7: {}
 
