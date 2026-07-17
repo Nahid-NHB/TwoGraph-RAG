@@ -11,6 +11,10 @@
     "build": "tsc -b",
     "typecheck": "tsc -b",
     "clean": "tsc -b --clean",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:int": "vitest run --config vitest.int.config.ts",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:boundaries": "node scripts/verify-boundaries.mjs",
@@ -19,6 +23,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.1",
+    "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.5",
@@ -26,6 +32,7 @@
     "globals": "^17.7.0",
     "prettier": "^3.9.5",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.64.0"
+    "typescript-eslint": "^8.64.0",
+    "vitest": "^4.1.10"
   }
 }
