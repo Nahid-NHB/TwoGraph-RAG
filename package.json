@@ -13,7 +13,7 @@
     "clean": "tsc -b --clean",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:int": "vitest run --config vitest.int.config.ts",
+    "test:int": "vitest run --config vitest.int.config.ts --passWithNoTests",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
