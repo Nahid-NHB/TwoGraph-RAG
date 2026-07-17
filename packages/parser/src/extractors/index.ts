@@ -4,6 +4,7 @@ import { docsExtractor } from './docs.js';
 import { modulesExtractor } from './modules.js';
 import { reactComponentsExtractor } from './react-components.js';
 import { reactHooksExtractor } from './react-hooks.js';
+import { referencesExtractor } from './references.js';
 import { routesExtractor } from './routes.js';
 import { symbolsExtractor } from './symbols.js';
 import { typesExtractor } from './types.js';
@@ -15,6 +16,7 @@ export { classifySource, modulesExtractor } from './modules.js';
 export { docsExtractor, parseJsdoc } from './docs.js';
 export { reactComponentsExtractor } from './react-components.js';
 export { isBuiltinHook, reactHooksExtractor } from './react-hooks.js';
+export { referencesExtractor } from './references.js';
 export {
   expressDetector,
   nextDetector,
@@ -34,6 +36,7 @@ export function defaultExtractors(): Extractor[] {
     reactComponentsExtractor,
     reactHooksExtractor,
     routesExtractor,
+    referencesExtractor,
     docsExtractor,
   ];
 }
