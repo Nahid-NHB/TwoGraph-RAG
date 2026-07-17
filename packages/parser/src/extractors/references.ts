@@ -92,8 +92,13 @@ export const referencesExtractor: Extractor = {
     };
 
     const calleeName = (callee: Node): string | undefined => {
-      // Generic calls: fn<T>(…) parse as instantiation_expression around the callee.
-      if (callee.type === 'instantiation_expression') {
+      // Wrappers the grammar folds into the callee: generics (instantiation),
+      // `await fn(...)` (await binds inside call_expression), parens.
+      if (
+        callee.type === 'instantiation_expression' ||
+        callee.type === 'await_expression' ||
+        callee.type === 'parenthesized_expression'
+      ) {
         const inner = callee.namedChild(0);
         return inner ? calleeName(inner) : undefined;
       }
