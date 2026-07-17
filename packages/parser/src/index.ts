@@ -10,3 +10,4 @@ export {
 } from './registry.js';
 export { captures, nodeSpan, text, type CaptureHit } from './query.js';
 export * from './extractors/index.js';
+export { resolveReferences, type ResolveOptions, type ResolutionStats } from './resolve.js';
