@@ -2,6 +2,7 @@ import type { Extractor } from '../registry.js';
 import { classesExtractor } from './classes.js';
 import { docsExtractor } from './docs.js';
 import { modulesExtractor } from './modules.js';
+import { reactComponentsExtractor } from './react-components.js';
 import { symbolsExtractor } from './symbols.js';
 import { typesExtractor } from './types.js';
 
@@ -10,9 +11,17 @@ export { classesExtractor } from './classes.js';
 export { typesExtractor } from './types.js';
 export { classifySource, modulesExtractor } from './modules.js';
 export { docsExtractor, parseJsdoc } from './docs.js';
+export { reactComponentsExtractor } from './react-components.js';
 
-/** The standard extractor set. Order matters: docsExtractor attaches to
- * symbols produced by the extractors before it. */
+/** The standard extractor set. Order matters: react upgrades symbols from the
+ * extractors before it; docsExtractor attaches to everything last. */
 export function defaultExtractors(): Extractor[] {
-  return [symbolsExtractor, classesExtractor, typesExtractor, modulesExtractor, docsExtractor];
+  return [
+    symbolsExtractor,
+    classesExtractor,
+    typesExtractor,
+    modulesExtractor,
+    reactComponentsExtractor,
+    docsExtractor,
+  ];
 }
