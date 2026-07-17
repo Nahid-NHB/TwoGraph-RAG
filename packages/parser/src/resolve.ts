@@ -34,6 +34,48 @@ function normalize(path: string): string {
  * honoring tsconfig path aliases) → target symbols. Sets `resolvedId` on
  * reference records in place; file-local names resolve first.
  */
+/**
+ * Builds a module-specifier resolver over a set of known file paths.
+ * Handles relative specifiers (with extension/index probing) and
+ * tsconfig-style path aliases. Returns undefined for packages/unknowns.
+ */
+export function createModuleResolver(
+  knownPaths: Iterable<string>,
+  options: ResolveOptions = {},
+): (fromPath: string, specifier: string) => string | undefined {
+  const paths = new Set(knownPaths);
+
+  const tryFiles = (base: string): string | undefined => {
+    if (paths.has(base)) return base;
+    for (const ext of EXTENSIONS) {
+      if (paths.has(base + ext)) return base + ext;
+    }
+    for (const ext of EXTENSIONS) {
+      const index = `${base}/index${ext}`;
+      if (paths.has(index)) return index;
+    }
+    return undefined;
+  };
+
+  return (fromPath, specifier) => {
+    if (specifier.startsWith('.')) {
+      return tryFiles(normalize(`${dirname(fromPath)}/${specifier}`));
+    }
+    if (options.paths) {
+      for (const [pattern, targets] of Object.entries(options.paths)) {
+        const prefix = pattern.replace(/\*$/, '');
+        if (!specifier.startsWith(prefix)) continue;
+        const rest = specifier.slice(prefix.length);
+        for (const target of targets) {
+          const hit = tryFiles(normalize(target.replace(/\*$/, '') + rest));
+          if (hit) return hit;
+        }
+      }
+    }
+    return undefined;
+  };
+}
+
 export function resolveReferences(
   files: ParsedFile[],
   options: ResolveOptions = {},
@@ -41,40 +83,7 @@ export function resolveReferences(
   const byPath = new Map<string, ParsedFile>();
   for (const file of files) byPath.set(file.path, file);
 
-  /** Resolve a module specifier from an importing file to a ParsedFile path. */
-  const resolveModule = (fromPath: string, specifier: string): string | undefined => {
-    let candidateBase: string | undefined;
-    if (specifier.startsWith('.')) {
-      candidateBase = normalize(`${dirname(fromPath)}/${specifier}`);
-    } else if (options.paths) {
-      for (const [pattern, targets] of Object.entries(options.paths)) {
-        const prefix = pattern.replace(/\*$/, '');
-        if (!specifier.startsWith(prefix)) continue;
-        const rest = specifier.slice(prefix.length);
-        for (const target of targets) {
-          const base = normalize(target.replace(/\*$/, '') + rest);
-          const hit = tryFiles(base);
-          if (hit) return hit;
-        }
-      }
-      return undefined;
-    } else {
-      return undefined;
-    }
-    return tryFiles(candidateBase);
-  };
-
-  const tryFiles = (base: string): string | undefined => {
-    if (byPath.has(base)) return base;
-    for (const ext of EXTENSIONS) {
-      if (byPath.has(base + ext)) return base + ext;
-    }
-    for (const ext of EXTENSIONS) {
-      const index = `${base}/index${ext}`;
-      if (byPath.has(index)) return index;
-    }
-    return undefined;
-  };
+  const resolveModule = createModuleResolver(byPath.keys(), options);
 
   /** Find the symbol id exporting `name` from `path`, following re-export chains. */
   const resolveExport = (

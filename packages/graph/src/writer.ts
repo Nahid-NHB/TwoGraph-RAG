@@ -81,10 +81,12 @@ function assertLabel(label: string): string {
   return label;
 }
 
+/** Resolves a module specifier to a known repo-relative file path (from @twograph/parser). */
+export type ModuleResolver = (fromPath: string, specifier: string) => string | undefined;
+
 /**
- * Writes ParsedFiles into the knowledge graph. Issue #23 scope: idempotent
- * node upserts (MERGE) and the CONTAINS hierarchy
- * Repository → Directory* → File → symbol. Batched with UNWIND per label.
+ * Writes ParsedFiles into the knowledge graph: idempotent node upserts (MERGE),
+ * the CONTAINS hierarchy (#23), and structural edges (#24). Batched with UNWIND.
  */
 export class GraphWriter {
   constructor(private readonly client: GraphClient) {}
@@ -175,6 +177,160 @@ export class GraphWriter {
          MATCH (a:${assertLabel(aLabel)} {id: row.a}), (b:${assertLabel(bLabel)} {id: row.b})
          MERGE (a)-[:CONTAINS]->(b)`,
         { rows },
+      );
+    }
+  }
+
+  /**
+   * Structural edges for one file (issue #24): DEFINES/DECLARES ownership,
+   * Class→Method DEFINES, IMPORTS (File→File | File→Dependency), EXPORTS
+   * (File→symbol, re-exports File→File), EXTENDS/IMPLEMENTS from resolved
+   * heritage references. Requires all involved nodes to exist (run after
+   * writeParsedFile for every file, and after resolveReferences).
+   */
+  async writeStructuralEdges(parsed: ParsedFile, resolveModule: ModuleResolver): Promise<void> {
+    const fileId = `${parsed.repo}:${parsed.path}`;
+
+    // Ownership: DEFINES for definitions, DECLARES for variables.
+    const defines: { b: string; bLabel: string }[] = [];
+    const declares: { b: string; bLabel: string }[] = [];
+    const byQualified = new Map(parsed.symbols.map((s) => [s.qualifiedName, s]));
+    const classMethods: { a: string; b: string }[] = [];
+    for (const symbol of parsed.symbols) {
+      const label = KIND_LABEL[symbol.kind];
+      if (symbol.kind === 'variable') declares.push({ b: symbol.id, bLabel: label });
+      else defines.push({ b: symbol.id, bLabel: label });
+      if (symbol.kind === 'method' && symbol.qualifiedName.includes('.')) {
+        const className = symbol.qualifiedName.slice(0, symbol.qualifiedName.lastIndexOf('.'));
+        const cls = byQualified.get(className);
+        if (cls) classMethods.push({ a: cls.id, b: symbol.id });
+      }
+    }
+    await this.edgeBatch('File', 'DEFINES', defines, fileId);
+    await this.edgeBatch('File', 'DECLARES', declares, fileId);
+    if (classMethods.length > 0) {
+      await this.client.run(
+        `UNWIND $rows AS row
+         MATCH (a:Class {id: row.a}), (b:Method {id: row.b})
+         MERGE (a)-[:DEFINES]->(b)`,
+        { rows: classMethods },
+      );
+    }
+
+    // IMPORTS: resolved relative imports → File; package imports → Dependency.
+    const fileImports: { b: string; props: Record<string, unknown> }[] = [];
+    const depImports: { dep: string; name: string; props: Record<string, unknown> }[] = [];
+    for (const imp of parsed.imports) {
+      const props = {
+        specifiers: JSON.stringify(imp.specifiers),
+        kind: imp.kind,
+        line: imp.line,
+      };
+      const target =
+        imp.sourceType === 'relative' ? resolveModule(parsed.path, imp.source) : undefined;
+      if (target) {
+        fileImports.push({ b: `${parsed.repo}:${target}`, props });
+      } else if (imp.sourceType !== 'relative') {
+        const pkg = imp.source.startsWith('node:')
+          ? imp.source
+          : imp.source.split('/')[0]?.startsWith('@')
+            ? imp.source.split('/').slice(0, 2).join('/')
+            : (imp.source.split('/')[0] ?? imp.source);
+        depImports.push({
+          dep: `${parsed.repo}::dep::${pkg}`,
+          name: pkg,
+          props: { ...props, builtin: imp.sourceType === 'builtin' },
+        });
+      }
+    }
+    if (fileImports.length > 0) {
+      await this.client.run(
+        `UNWIND $rows AS row
+         MATCH (a:File {id: $fileId}), (b:File {id: row.b})
+         MERGE (a)-[r:IMPORTS]->(b) SET r += row.props`,
+        { fileId, rows: fileImports },
+      );
+    }
+    if (depImports.length > 0) {
+      await this.client.run(
+        `UNWIND $rows AS row
+         MERGE (d:Dependency {id: row.dep})
+         SET d.repoId = $repo, d.name = row.name
+         WITH d, row
+         MATCH (a:File {id: $fileId})
+         MERGE (a)-[r:IMPORTS]->(d) SET r += row.props`,
+        { fileId, repo: parsed.repo, rows: depImports },
+      );
+    }
+
+    // EXPORTS: local symbols; re-exports/star point at the source File.
+    const exportRows: { b: string; bLabel: string; props: Record<string, unknown> }[] = [];
+    for (const exp of parsed.exports) {
+      const props = { exportKind: exp.kind, name: exp.name, line: exp.line };
+      if (exp.kind === 'named' || exp.kind === 'default') {
+        const local = exp.local ?? exp.name;
+        const symbol = byQualified.get(local) ?? parsed.symbols.find((s) => s.name === local);
+        if (symbol) {
+          exportRows.push({ b: symbol.id, bLabel: KIND_LABEL[symbol.kind], props });
+        }
+      } else if (exp.source) {
+        const target = resolveModule(parsed.path, exp.source);
+        if (target) exportRows.push({ b: `${parsed.repo}:${target}`, bLabel: 'File', props });
+      }
+    }
+    const exportsByLabel = new Map<string, typeof exportRows>();
+    for (const row of exportRows) {
+      const rows = exportsByLabel.get(row.bLabel) ?? [];
+      rows.push(row);
+      exportsByLabel.set(row.bLabel, rows);
+    }
+    for (const [label, rows] of exportsByLabel) {
+      await this.client.run(
+        `UNWIND $rows AS row
+         MATCH (a:File {id: $fileId}), (b:${assertLabel(label)} {id: row.b})
+         MERGE (a)-[r:EXPORTS {name: row.props.name}]->(b) SET r += row.props`,
+        { fileId, rows },
+      );
+    }
+
+    // EXTENDS / IMPLEMENTS from resolved heritage references.
+    for (const kind of ['extends', 'implements'] as const) {
+      const rows = parsed.references
+        .filter((r) => r.kind === kind && r.resolvedId && r.from)
+        .map((r) => {
+          const from = byQualified.get(r.from ?? '');
+          return from ? { a: from.id, b: r.resolvedId } : undefined;
+        })
+        .filter((r): r is { a: string; b: string } => r !== undefined);
+      if (rows.length === 0) continue;
+      const edge = kind === 'extends' ? 'EXTENDS' : 'IMPLEMENTS';
+      await this.client.run(
+        `UNWIND $rows AS row
+         MATCH (a {id: row.a}), (b {id: row.b})
+         MERGE (a)-[:${edge}]->(b)`,
+        { rows },
+      );
+    }
+  }
+
+  private async edgeBatch(
+    aLabel: string,
+    edge: string,
+    rows: { b: string; bLabel: string }[],
+    aId: string,
+  ): Promise<void> {
+    const byLabel = new Map<string, string[]>();
+    for (const row of rows) {
+      const list = byLabel.get(row.bLabel) ?? [];
+      list.push(row.b);
+      byLabel.set(row.bLabel, list);
+    }
+    for (const [label, ids] of byLabel) {
+      await this.client.run(
+        `UNWIND $ids AS id
+         MATCH (a:${assertLabel(aLabel)} {id: $aId}), (b:${assertLabel(label)} {id: id})
+         MERGE (a)-[:${edge}]->(b)`,
+        { aId, ids },
       );
     }
   }
