@@ -1,0 +1,25 @@
+{
+  "name": "@twograph/vector",
+  "version": "0.0.0",
+  "description": "Embedding providers (UniXcoder/ONNX), symbol-aware chunking, and Qdrant vector store",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
+    "@qdrant/js-client-rest": "^1.15.1",
+    "@twograph/core": "workspace:*"
+  }
+}

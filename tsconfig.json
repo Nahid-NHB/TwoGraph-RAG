@@ -5,6 +5,7 @@
     { "path": "packages/cli/tsconfig.build.json" },
     { "path": "packages/parser/tsconfig.build.json" },
     { "path": "packages/graph/tsconfig.build.json" },
-    { "path": "packages/store/tsconfig.build.json" }
+    { "path": "packages/store/tsconfig.build.json" },
+    { "path": "packages/vector/tsconfig.build.json" }
   ]
 }
