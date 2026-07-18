@@ -459,6 +459,81 @@ export class GraphWriter {
     }
   }
 
+  /**
+   * Incremental update support (issue #27, docs/05 §3): removes a file's owned
+   * subgraph so it can be rewritten. Route nodes are permanent — they keep
+   * their identity/properties; only their inbound HANDLES edges are cleared
+   * for re-pointing. The File node survives (or is deleted for removed files).
+   */
+  async removeFileSubgraph(
+    repo: string,
+    path: string,
+    options: { deleteFile?: boolean } = {},
+  ): Promise<void> {
+    const fileId = `${repo}:${path}`;
+    // Non-route symbols owned by the file: fully removed (incoming edges too).
+    await this.client.run(
+      `MATCH (f:File {id: $fileId})-[:CONTAINS]->(s)
+       WHERE NOT s:Route
+       DETACH DELETE s`,
+      { fileId },
+    );
+    // Routes stay; clear inbound HANDLES so handlers re-point on rewrite.
+    await this.client.run(
+      `MATCH (f:File {id: $fileId})-[:CONTAINS]->(r:Route)<-[h:HANDLES]-()
+       DELETE h`,
+      { fileId },
+    );
+    // The file's own structural edges are rewritten from scratch.
+    await this.client.run(
+      `MATCH (f:File {id: $fileId})-[e:IMPORTS|EXPORTS|DEFINES|DECLARES]->()
+       DELETE e`,
+      { fileId },
+    );
+    if (options.deleteFile) {
+      await this.client.run('MATCH (f:File {id: $fileId}) DETACH DELETE f', { fileId });
+    }
+  }
+
+  /** All write passes for one file, in order. */
+  async writeFileComplete(parsed: ParsedFile, resolveModule: ModuleResolver): Promise<void> {
+    await this.writeParsedFile(parsed);
+    await this.writeStructuralEdges(parsed, resolveModule);
+    await this.writeBehavioralEdges(parsed);
+    await this.writeReactEdges(parsed);
+  }
+
+  /**
+   * Re-index one changed file: remove its subgraph, rewrite it, and re-run
+   * edge passes for dependent files (whose edges into the removed symbols
+   * were destroyed). Dependents are supplied by the caller (indexer keeps
+   * parse results); returns the dependent paths it re-pointed.
+   */
+  async updateFile(
+    parsed: ParsedFile,
+    resolveModule: ModuleResolver,
+    dependents: ParsedFile[],
+  ): Promise<string[]> {
+    await this.removeFileSubgraph(parsed.repo, parsed.path);
+    await this.writeFileComplete(parsed, resolveModule);
+    for (const dep of dependents) {
+      await this.writeStructuralEdges(dep, resolveModule);
+      await this.writeBehavioralEdges(dep);
+      await this.writeReactEdges(dep);
+    }
+    return dependents.map((d) => d.path);
+  }
+
+  /** Paths of files that IMPORT the given file (need edge re-pointing). */
+  async dependentFiles(repo: string, path: string): Promise<string[]> {
+    const rows = await this.client.run(
+      `MATCH (d:File {repoId: $repo})-[:IMPORTS]->(:File {id: $fileId})
+       RETURN d.path AS path`,
+      { repo, fileId: `${repo}:${path}` },
+    );
+    return rows.map((r) => r.get('path') as string);
+  }
+
   private async edgeBatch(
     aLabel: string,
     edge: string,
