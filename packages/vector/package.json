@@ -21,5 +21,8 @@
     "@huggingface/transformers": "^3.8.1",
     "@qdrant/js-client-rest": "^1.15.1",
     "@twograph/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@twograph/parser": "workspace:*"
   }
 }

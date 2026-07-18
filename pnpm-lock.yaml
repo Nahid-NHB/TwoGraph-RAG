@@ -157,6 +157,10 @@ importers:
       '@twograph/core':
         specifier: workspace:*
         version: link:../core
+    devDependencies:
+      '@twograph/parser':
+        specifier: workspace:*
+        version: link:../parser
 
 packages:
 

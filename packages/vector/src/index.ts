@@ -5,3 +5,4 @@ export {
   TransformersEmbedder,
   type Embedder,
 } from './embedder.js';
+export { chunkFile } from './chunking.js';
