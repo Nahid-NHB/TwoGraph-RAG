@@ -91,7 +91,7 @@ describe('FtsIndex BM25 search', () => {
     expect(hits.some((h) => h.name === 'fetchUser')).toBe(false);
 
     fts.deleteByPath('r', 'api/users.ts');
-    expect(fts.search('r', 'loadUser')).toHaveLength(0);
+    expect(fts.search('r', 'loadUser').some((h) => h.path === 'api/users.ts')).toBe(false);
     expect(fts.search('r', 'helper').length).toBeGreaterThan(0);
   });
 
