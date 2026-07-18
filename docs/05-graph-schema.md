@@ -4,53 +4,53 @@ Cypher-compatible property graph. Every code node carries `id` (stable symbol ID
 
 ## 1. Node labels
 
-| Label | Extra properties | Notes |
-| --- | --- | --- |
-| `Repository` | `rootPath`, `name` | one per indexed repo |
-| `Package` | `version`, `manifestPath` | from package.json (workspace-aware) |
-| `Directory` | — | |
-| `File` | `language`, `contentHash` | |
-| `Class` | `abstract`, `doc` | |
-| `Function` | `signature`, `async`, `generator`, `arrow`, `exported`, `doc` | includes arrow fns bound to names |
-| `Method` | `signature`, `static`, `visibility`, `doc` | |
-| `Hook` | `signature`, `builtin`, `doc` | `use*` functions |
-| `Component` | `componentKind` (fn/class/memo/forwardRef), `propsType`, `doc` | React |
-| `Interface` | `doc` | TS |
-| `Enum` | `const`, `doc` | TS |
-| `TypeAlias` | `doc` | TS |
-| `Variable` | `varKind` (const/let/var), `typeText` | module-level |
-| `Import` | `source`, `specifiers`, `importKind` | one per import statement |
-| `Export` | `exportKind` (named/default/re-export), `source?` | |
-| `Route` | `routePattern`, `method?`, `framework` | **never deleted implicitly** |
-| `Api` | `method`, `urlPattern` | API handlers / fetch call sites |
-| `Context` | `defaultValueText?` | React context objects |
-| `Dependency` | `version`, `depKind` (prod/dev/peer) | external packages |
-| `Test` | `framework`, `titlePath` | test cases/suites |
-| `Configuration` | `configKind` (tsconfig/vite/next/eslint/…) | parsed config files |
+| Label           | Extra properties                                               | Notes                               |
+| --------------- | -------------------------------------------------------------- | ----------------------------------- |
+| `Repository`    | `rootPath`, `name`                                             | one per indexed repo                |
+| `Package`       | `version`, `manifestPath`                                      | from package.json (workspace-aware) |
+| `Directory`     | —                                                              |                                     |
+| `File`          | `language`, `contentHash`                                      |                                     |
+| `Class`         | `abstract`, `doc`                                              |                                     |
+| `Function`      | `signature`, `async`, `generator`, `arrow`, `exported`, `doc`  | includes arrow fns bound to names   |
+| `Method`        | `signature`, `static`, `visibility`, `doc`                     |                                     |
+| `Hook`          | `signature`, `builtin`, `doc`                                  | `use*` functions                    |
+| `Component`     | `componentKind` (fn/class/memo/forwardRef), `propsType`, `doc` | React                               |
+| `Interface`     | `doc`                                                          | TS                                  |
+| `Enum`          | `const`, `doc`                                                 | TS                                  |
+| `TypeAlias`     | `doc`                                                          | TS                                  |
+| `Variable`      | `varKind` (const/let/var), `typeText`                          | module-level                        |
+| `Import`        | `source`, `specifiers`, `importKind`                           | one per import statement            |
+| `Export`        | `exportKind` (named/default/re-export), `source?`              |                                     |
+| `Route`         | `routePattern`, `method?`, `framework`                         | **never deleted implicitly**        |
+| `Api`           | `method`, `urlPattern`                                         | API handlers / fetch call sites     |
+| `Context`       | `defaultValueText?`                                            | React context objects               |
+| `Dependency`    | `version`, `depKind` (prod/dev/peer)                           | external packages                   |
+| `Test`          | `framework`, `titlePath`                                       | test cases/suites                   |
+| `Configuration` | `configKind` (tsconfig/vite/next/eslint/…)                     | parsed config files                 |
 
 ## 2. Edge types
 
-| Edge | From → To | Meaning |
-| --- | --- | --- |
-| `CONTAINS` | Repository→Package→Directory→File→symbol | physical hierarchy |
-| `IMPORTS` | File → File \| Dependency | module dependency (props: `specifiers`) |
-| `EXPORTS` | File → symbol | exported surface (props: `exportKind`, `alias`) |
-| `CALLS` | Function/Method/Hook/Component → Function/Method/Hook | call sites (props: `line`, `count`) |
-| `USES` | symbol → Variable/Enum/TypeAlias | identifier usage |
-| `DEFINES` | File → symbol; Class → Method | definition ownership |
-| `DECLARES` | File → Variable/Import/Export | declarations |
-| `IMPLEMENTS` | Class → Interface | |
-| `EXTENDS` | Class → Class; Interface → Interface | |
-| `RETURNS` | Function/Method → TypeAlias/Interface/Class | declared return type |
-| `READS` / `WRITES` | Function/Method → Variable | state access |
-| `DEPENDS_ON` | Package → Dependency; File → Configuration | |
-| `TESTS` | Test → symbol/File | coverage links |
-| `REFERENCES` | any symbol → any symbol | fallback typed reference |
-| `USES_COMPONENT` | Component → Component | JSX usage (props: `count`) |
-| `USES_HOOK` | Component/Hook → Hook | hook call |
-| `PROVIDES_CONTEXT` | Component → Context | renders `<X.Provider>` |
-| `CONSUMES_CONTEXT` | Component/Hook → Context | `useContext(X)` / consumer |
-| `HANDLES` | Function/Component → Route/Api | route handler binding |
+| Edge               | From → To                                             | Meaning                                         |
+| ------------------ | ----------------------------------------------------- | ----------------------------------------------- |
+| `CONTAINS`         | Repository→Package→Directory→File→symbol              | physical hierarchy                              |
+| `IMPORTS`          | File → File \| Dependency                             | module dependency (props: `specifiers`)         |
+| `EXPORTS`          | File → symbol                                         | exported surface (props: `exportKind`, `alias`) |
+| `CALLS`            | Function/Method/Hook/Component → Function/Method/Hook | call sites (props: `line`, `count`)             |
+| `USES`             | symbol → Variable/Enum/TypeAlias                      | identifier usage                                |
+| `DEFINES`          | File → symbol; Class → Method                         | definition ownership                            |
+| `DECLARES`         | File → Variable/Import/Export                         | declarations                                    |
+| `IMPLEMENTS`       | Class → Interface                                     |                                                 |
+| `EXTENDS`          | Class → Class; Interface → Interface                  |                                                 |
+| `RETURNS`          | Function/Method → TypeAlias/Interface/Class           | declared return type                            |
+| `READS` / `WRITES` | Function/Method → Variable                            | state access                                    |
+| `DEPENDS_ON`       | Package → Dependency; File → Configuration            |                                                 |
+| `TESTS`            | Test → symbol/File                                    | coverage links                                  |
+| `REFERENCES`       | any symbol → any symbol                               | fallback typed reference                        |
+| `USES_COMPONENT`   | Component → Component                                 | JSX usage (props: `count`)                      |
+| `USES_HOOK`        | Component/Hook → Hook                                 | hook call                                       |
+| `PROVIDES_CONTEXT` | Component → Context                                   | renders `<X.Provider>`                          |
+| `CONSUMES_CONTEXT` | Component/Hook → Context                              | `useContext(X)` / consumer                      |
+| `HANDLES`          | Function/Component → Route/Api                        | route handler binding                           |
 
 ## 3. Update semantics
 

@@ -1,0 +1,25 @@
+{
+  "name": "@twograph/parser",
+  "version": "0.0.0",
+  "description": "Tree-sitter based parsing and extraction for JS/TS/JSX/TSX",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@twograph/core": "workspace:*",
+    "web-tree-sitter": "^0.25.10",
+    "tree-sitter-wasms": "^0.1.12"
+  }
+}

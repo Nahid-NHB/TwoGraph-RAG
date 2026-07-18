@@ -8,7 +8,7 @@
 
 TwoGraph-RAG analyzes entire repositories with Tree-sitter, builds a persistent knowledge graph in Memgraph, indexes code semantically with UniXcoder embeddings, and answers complex developer questions through a hybrid retrieval pipeline (BM25 + vectors + graph traversal → RRF → cross-encoder reranking). It can also **edit code safely via AST transformations** with diff previews and approval gates, and it keeps itself up to date as files change.
 
-Think *Sourcegraph Cody + Greptile + GraphRAG + Cursor*, focused on the JS/TS/React ecosystem, fully open source.
+Think _Sourcegraph Cody + Greptile + GraphRAG + Cursor_, focused on the JS/TS/React ecosystem, fully open source.
 
 ```
 Question → Multi-Query → Hybrid Search → Graph Expansion → RRF → Rerank → Context Assembly → LLM → Grounded Answer
@@ -29,17 +29,17 @@ Question → Multi-Query → Hybrid Search → Graph Expansion → RRF → Reran
 
 ## Documentation
 
-| Doc | Contents |
-| --- | --- |
-| [Requirements](docs/01-requirements.md) | Functional & non-functional requirements |
-| [Architecture](docs/02-architecture.md) | Components, package layout, data flow |
-| [Folder Structure](docs/03-folder-structure.md) | Monorepo layout |
-| [Database Schema](docs/04-database-schema.md) | SQLite metadata store, Qdrant collections |
-| [Knowledge Graph Schema](docs/05-graph-schema.md) | Node labels, edge types, Cypher patterns |
-| [API Design](docs/06-api-design.md) | REST/SSE API, MCP tools, CLI |
-| [Retrieval Pipeline](docs/07-retrieval-pipeline.md) | Hybrid retrieval + RAG pipeline |
-| [Editing Pipeline](docs/08-editing-pipeline.md) | AST editing with approval workflow |
-| [Extension Points](docs/09-extension-points.md) | Plugging in languages, stores, providers |
+| Doc                                                 | Contents                                  |
+| --------------------------------------------------- | ----------------------------------------- |
+| [Requirements](docs/01-requirements.md)             | Functional & non-functional requirements  |
+| [Architecture](docs/02-architecture.md)             | Components, package layout, data flow     |
+| [Folder Structure](docs/03-folder-structure.md)     | Monorepo layout                           |
+| [Database Schema](docs/04-database-schema.md)       | SQLite metadata store, Qdrant collections |
+| [Knowledge Graph Schema](docs/05-graph-schema.md)   | Node labels, edge types, Cypher patterns  |
+| [API Design](docs/06-api-design.md)                 | REST/SSE API, MCP tools, CLI              |
+| [Retrieval Pipeline](docs/07-retrieval-pipeline.md) | Hybrid retrieval + RAG pipeline           |
+| [Editing Pipeline](docs/08-editing-pipeline.md)     | AST editing with approval workflow        |
+| [Extension Points](docs/09-extension-points.md)     | Plugging in languages, stores, providers  |
 
 ## Development
 

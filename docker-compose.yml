@@ -1,0 +1,31 @@
+services:
+  memgraph:
+    image: memgraph/memgraph:3.5.0
+    container_name: twograph-memgraph
+    ports:
+      - '${MEMGRAPH_PORT:-7687}:7687'
+    volumes:
+      - memgraph-data:/var/lib/memgraph
+    command: ['--log-level=WARNING', '--also-log-to-stderr']
+    healthcheck:
+      test: ['CMD-SHELL', 'echo "RETURN 0;" | mgconsole || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  qdrant:
+    image: qdrant/qdrant:v1.15.5
+    container_name: twograph-qdrant
+    ports:
+      - '${QDRANT_PORT:-6333}:6333'
+    volumes:
+      - qdrant-data:/qdrant/storage
+    healthcheck:
+      test: ['CMD-SHELL', 'bash -c ":> /dev/tcp/127.0.0.1/6333" || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  memgraph-data:
+  qdrant-data:

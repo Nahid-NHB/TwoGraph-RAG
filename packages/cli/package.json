@@ -1,0 +1,27 @@
+{
+  "name": "@twograph/cli",
+  "version": "0.0.0",
+  "description": "TwoGraph-RAG command line interface",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "twograph": "./dist/main.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@twograph/core": "workspace:*",
+    "commander": "^14.0.2"
+  }
+}

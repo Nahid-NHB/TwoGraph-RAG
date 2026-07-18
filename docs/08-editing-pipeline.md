@@ -18,15 +18,15 @@ request → validate → plan (AST transform, in-memory) → diff preview → [a
 
 ## 2. Operations
 
-| Operation | Params | Guarantees |
-| --- | --- | --- |
-| `rename_symbol` | `{symbolId, newName}` | all references, imports, JSX tags, re-exports updated; string-only occurrences untouched |
-| `move_function` | `{symbolId, targetFile}` | declaration moved; imports added/removed at every call site; barrel exports updated |
-| `extract_function` | `{file, span, name}` | selected statements → new function; captured variables become parameters; return values inferred |
-| `add_parameter` | `{symbolId, name, type, defaultValue?}` | signature + all call sites updated (default value or explicit arg) |
-| `remove_parameter` | `{symbolId, paramName}` | rejected if parameter is used in body (unless `force`); call sites pruned |
-| `update_imports` | `{file, add?, remove?, organize?}` | dedupe, sort, prune unused |
-| `apply_patch` | `{symbolId, newBody}` | LLM-suggested body (from optimizer) parsed & validated before diff |
+| Operation          | Params                                  | Guarantees                                                                                       |
+| ------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `rename_symbol`    | `{symbolId, newName}`                   | all references, imports, JSX tags, re-exports updated; string-only occurrences untouched         |
+| `move_function`    | `{symbolId, targetFile}`                | declaration moved; imports added/removed at every call site; barrel exports updated              |
+| `extract_function` | `{file, span, name}`                    | selected statements → new function; captured variables become parameters; return values inferred |
+| `add_parameter`    | `{symbolId, name, type, defaultValue?}` | signature + all call sites updated (default value or explicit arg)                               |
+| `remove_parameter` | `{symbolId, paramName}`                 | rejected if parameter is used in body (unless `force`); call sites pruned                        |
+| `update_imports`   | `{file, add?, remove?, organize?}`      | dedupe, sort, prune unused                                                                       |
+| `apply_patch`      | `{symbolId, newBody}`                   | LLM-suggested body (from optimizer) parsed & validated before diff                               |
 
 Every operation returns the same `EditPlan` shape, so new operations plug in via a registry (see [09-extension-points.md](09-extension-points.md)).
 
@@ -35,4 +35,4 @@ Every operation returns the same `EditPlan` shape, so new operations plug in via
 - Diff preview is mandatory; `apply` without an existing preview is rejected (API and MCP).
 - Post-transform check: every touched file must parse cleanly; optional `tsc --noEmit` gate (config).
 - Concurrent edits to overlapping files are serialized per repo (single writer lock).
-- The optimizer (`optimize_function`) only ever *proposes* `apply_patch` edits — same gate as manual edits.
+- The optimizer (`optimize_function`) only ever _proposes_ `apply_patch` edits — same gate as manual edits.

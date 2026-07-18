@@ -24,7 +24,8 @@ pnpm lint && pnpm typecheck
 ## Code standards
 
 - TypeScript `strict: true`; no `any` in exported APIs; zod at all boundaries.
-- No package may import from `server`, `mcp`, `cli`, or `apps/*` (enforced by ESLint).
+- No package may import from `server`, `mcp`, `cli`, or `apps/*` (enforced by ESLint; `pnpm lint:boundaries` proves the rule fires).
+- Formatting is Prettier's job (`pnpm format`); ESLint handles correctness only (`eslint-config-prettier` disables style rules).
 - Unit tests (`*.test.ts`) must not touch network/docker; integration tests are `*.int.test.ts`.
 - **Never edit user code with regex** — AST only (see docs/08).
 - Errors: throw typed errors from `@twograph/core`; never swallow.
