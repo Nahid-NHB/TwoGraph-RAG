@@ -313,6 +313,68 @@ export class GraphWriter {
     }
   }
 
+  /**
+   * Behavioral edges for one file (issue #25): CALLS with per-pair counts,
+   * WRITES, READS (targets that are Variables), USES (Enum/TypeAlias/Context
+   * targets). Only resolved references produce edges — unresolved ones heal
+   * on the next resolution pass when their target file gets indexed.
+   */
+  async writeBehavioralEdges(parsed: ParsedFile): Promise<void> {
+    const byQualified = new Map(parsed.symbols.map((s) => [s.qualifiedName, s]));
+
+    const calls = new Map<string, { a: string; b: string; line: number; count: number }>();
+    const writes: { a: string; b: string; line: number }[] = [];
+    const reads: { a: string; b: string; line: number }[] = [];
+
+    for (const ref of parsed.references) {
+      if (!ref.resolvedId || !ref.from) continue;
+      const from = byQualified.get(ref.from);
+      if (!from || from.id === ref.resolvedId) continue;
+      if (ref.kind === 'call') {
+        const key = `${from.id}|${ref.resolvedId}`;
+        const existing = calls.get(key);
+        if (existing) existing.count += 1;
+        else calls.set(key, { a: from.id, b: ref.resolvedId, line: ref.line, count: 1 });
+      } else if (ref.kind === 'write') {
+        writes.push({ a: from.id, b: ref.resolvedId, line: ref.line });
+      } else if (ref.kind === 'read') {
+        reads.push({ a: from.id, b: ref.resolvedId, line: ref.line });
+      }
+    }
+
+    if (calls.size > 0) {
+      await this.client.run(
+        `UNWIND $rows AS row
+         MATCH (a {id: row.a}), (b {id: row.b})
+         MERGE (a)-[r:CALLS]->(b) SET r.line = row.line, r.count = row.count`,
+        { rows: [...calls.values()] },
+      );
+    }
+    if (writes.length > 0) {
+      await this.client.run(
+        `UNWIND $rows AS row
+         MATCH (a {id: row.a}), (b {id: row.b})
+         MERGE (a)-[r:WRITES]->(b) SET r.line = row.line`,
+        { rows: writes },
+      );
+    }
+    if (reads.length > 0) {
+      await this.client.run(
+        `UNWIND $rows AS row
+         MATCH (a {id: row.a}), (b:Variable {id: row.b})
+         MERGE (a)-[r:READS]->(b) SET r.line = row.line`,
+        { rows: reads },
+      );
+      await this.client.run(
+        `UNWIND $rows AS row
+         MATCH (a {id: row.a}), (b {id: row.b})
+         WHERE b:Enum OR b:TypeAlias OR b:Context
+         MERGE (a)-[r:USES]->(b) SET r.line = row.line`,
+        { rows: reads },
+      );
+    }
+  }
+
   private async edgeBatch(
     aLabel: string,
     edge: string,
