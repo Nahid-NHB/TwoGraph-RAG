@@ -140,6 +140,12 @@ importers:
         specifier: ^0.25.10
         version: 0.25.10
 
+  packages/store:
+    dependencies:
+      '@twograph/core':
+        specifier: workspace:*
+        version: link:../core
+
 packages:
 
   '@babel/code-frame@7.29.7':
