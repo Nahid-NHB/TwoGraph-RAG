@@ -97,6 +97,16 @@ export const MIGRATIONS: readonly { version: number; sql: string }[] = [
       );
     `,
   },
+  {
+    version: 2,
+    sql: `
+      CREATE VIRTUAL TABLE chunks_fts USING fts5(
+        content, name, path, kind, tokens,
+        chunk_id UNINDEXED, repo UNINDEXED,
+        tokenize = "unicode61 tokenchars '_$'"
+      );
+    `,
+  },
 ];
 
 export function applyMigrations(db: DatabaseSync): void {

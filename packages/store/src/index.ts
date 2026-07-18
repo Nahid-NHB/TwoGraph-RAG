@@ -1,6 +1,13 @@
 export { openDatabase, type DatabaseSync } from './db.js';
 export { applyMigrations, MIGRATIONS } from './migrations.js';
 export {
+  FtsIndex,
+  splitIdentifiers,
+  type Bm25Filters,
+  type Bm25Hit,
+  type FtsChunkRow,
+} from './fts.js';
+export {
   MetadataStore,
   type FileRow,
   type IndexRunRow,
