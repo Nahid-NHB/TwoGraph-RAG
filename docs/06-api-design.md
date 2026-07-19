@@ -39,7 +39,7 @@ Errors: RFC 7807 `application/problem+json`. IDs are stable symbol IDs. All list
 | POST   | `/v1/repos/:repo/chat/sessions/:sid/messages` | ask; `Accept: text/event-stream` streams |
 | GET    | `/v1/repos/:repo/chat/sessions/:sid`          | history with citations                   |
 
-SSE events: `stage` (pipeline progress: multiquery→search→rerank→generate), `token`, `citations`, `done`, `error`.
+SSE events: `stage` (pipeline progress: multiquery→retrieve→expand→fuse→rerank→assemble→generate), `token` (generation deltas), `citations` (final `Citation[]`), `done` (usage + groundedness), `error`. A client disconnect cancels the in-flight LLM call; a non-streaming `Accept` returns the complete answer as JSON instead.
 
 ### Edits
 

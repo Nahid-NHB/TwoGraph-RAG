@@ -12,6 +12,8 @@ export {
   type ChatMessageRow,
   type ChatSessionRow,
   type ChunkRow,
+  type EditRow,
+  type EditStatus,
   type FileRow,
   type IndexRunRow,
   type RepoRow,

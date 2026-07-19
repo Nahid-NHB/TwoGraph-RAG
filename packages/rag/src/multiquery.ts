@@ -95,6 +95,7 @@ function parseQueries(content: string): MultiQueryOutput | undefined {
 export async function generateMultiQuery(
   llm: LlmProvider,
   question: string,
+  signal?: AbortSignal,
 ): Promise<MultiQueryResult> {
   const graphIntent = detectGraphIntent(question);
 
@@ -106,12 +107,16 @@ export async function generateMultiQuery(
       ],
       temperature: 0.3,
       maxTokens: 300,
+      ...(signal ? { signal } : {}),
     });
     const parsed = parseQueries(result.content);
     if (parsed) {
       return { queries: parsed.queries, ...(graphIntent ? { graphIntent } : {}), usedLlm: true };
     }
-  } catch {
+  } catch (err) {
+    // A caller-initiated abort should halt the whole pipeline, not be
+    // absorbed as an ordinary LLM failure (issue #47).
+    if (signal?.aborted) throw err;
     // Fall through to the failure-safe fallback below.
   }
 

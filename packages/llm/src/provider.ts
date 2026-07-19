@@ -29,6 +29,8 @@ export interface CompletionRequest {
   temperature?: number;
   maxTokens?: number;
   tools?: ToolDefinition[];
+  /** Aborting cancels the in-flight HTTP request to the provider (issue #47). */
+  signal?: AbortSignal;
 }
 
 export interface Usage {

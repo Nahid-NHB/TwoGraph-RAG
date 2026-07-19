@@ -45,4 +45,15 @@ describe('condenseFollowUp', () => {
     const result = await condenseFollowUp(failing, history, 'where is it tested?');
     expect(result).toBe('where is it tested?');
   });
+
+  it('propagates an abort instead of falling back, when the signal is already aborted (issue #47)', async () => {
+    const llm = new MockLlmProvider(['should never be reached']);
+    const history: ChatMessage[] = [{ role: 'user', content: 'hi', citations: [] }];
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      condenseFollowUp(llm, history, 'where is it tested?', controller.signal),
+    ).rejects.toThrow();
+  });
 });

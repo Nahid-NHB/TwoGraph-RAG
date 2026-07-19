@@ -60,6 +60,23 @@ export interface ChatMessageRow {
   created_at: string;
 }
 
+export type EditStatus = 'pending' | 'applied' | 'rejected' | 'expired' | 'reverted';
+
+export interface EditRow {
+  id: string;
+  repo_id: string;
+  operation: string;
+  params_json: string;
+  diff: string;
+  status: EditStatus;
+  created_at: string;
+  resolved_at: string | null;
+  /** JSON `Record<path, hash>` — content hash of each affected file at preview time. */
+  file_hashes_json: string;
+  /** Caller-defined JSON blob capturing what's needed to revert — populated only once applied. */
+  applied_files_json: string | null;
+}
+
 export interface IndexRunRow {
   id: string;
   repo_id: string;
@@ -303,6 +320,62 @@ export class MetadataStore {
   getIndexRun(id: string): IndexRunRow | undefined {
     return this.db.prepare(`SELECT * FROM index_runs WHERE id = ?`).get(id) as
       IndexRunRow | undefined;
+  }
+
+  // ---- edits (issue #49) ----
+  createEdit(
+    repoId: string,
+    operation: string,
+    paramsJson: string,
+    diff: string,
+    fileHashes: Record<string, string>,
+  ): EditRow {
+    const id = randomUUID();
+    this.db
+      .prepare(
+        `INSERT INTO edits (id, repo_id, operation, params_json, diff, file_hashes_json)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      )
+      .run(id, repoId, operation, paramsJson, diff, JSON.stringify(fileHashes));
+    const row = this.getEdit(id);
+    if (!row) throw new Error(`failed to create edit ${id}`);
+    return row;
+  }
+
+  getEdit(id: string): EditRow | undefined {
+    return this.db.prepare(`SELECT * FROM edits WHERE id = ?`).get(id) as EditRow | undefined;
+  }
+
+  listEdits(repoId: string, status?: EditStatus): EditRow[] {
+    if (status) {
+      return this.db
+        .prepare(`SELECT * FROM edits WHERE repo_id = ? AND status = ? ORDER BY created_at DESC`)
+        .all(repoId, status) as unknown as EditRow[];
+    }
+    return this.db
+      .prepare(`SELECT * FROM edits WHERE repo_id = ? ORDER BY created_at DESC`)
+      .all(repoId) as unknown as EditRow[];
+  }
+
+  /** Age comparison done in SQL to avoid JS-side timezone parsing of SQLite's `datetime('now')` text. */
+  isEditExpired(id: string, ttlMs: number): boolean {
+    const row = this.db
+      .prepare(
+        `SELECT (julianday('now') - julianday(created_at)) * 86400000.0 > ? AS expired
+         FROM edits WHERE id = ?`,
+      )
+      .get(ttlMs, id) as { expired: number } | undefined;
+    return row ? Boolean(row.expired) : false;
+  }
+
+  /** `appliedFilesJson` is a caller-serialized JSON blob — its shape is an editing-package concern. */
+  resolveEdit(id: string, status: EditStatus, appliedFilesJson?: string): void {
+    this.db
+      .prepare(
+        `UPDATE edits SET status = ?, resolved_at = datetime('now'), applied_files_json = ?
+         WHERE id = ?`,
+      )
+      .run(status, appliedFilesJson ?? null, id);
   }
 
   /** Runs `fn` inside an immediate transaction with rollback on throw. */

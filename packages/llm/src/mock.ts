@@ -45,15 +45,18 @@ export class MockLlmProvider implements LlmProvider {
   readonly id = 'mock';
   private readonly model: string;
   private readonly loop: boolean;
+  /** Delay before each streamed token — lets tests abort deterministically mid-stream. */
+  private readonly streamDelayMs: number;
   private cursor = 0;
   readonly requests: CompletionRequest[] = [];
 
   constructor(
     private readonly fixtures: MockFixture[],
-    options: { model?: string; loop?: boolean } = {},
+    options: { model?: string; loop?: boolean; streamDelayMs?: number } = {},
   ) {
     this.model = options.model ?? 'mock-model';
     this.loop = options.loop ?? true;
+    this.streamDelayMs = options.streamDelayMs ?? 0;
   }
 
   private next(): MockFixture {
@@ -70,11 +73,12 @@ export class MockLlmProvider implements LlmProvider {
   complete(request: CompletionRequest): Promise<CompletionResult> {
     this.requests.push(request);
     const promptTokens = estimateTokens(request.messages.map((m) => m.content).join('\n'));
-    // Deferred via .then() (not async/await) so a throw from next() rejects
-    // the promise instead of escaping synchronously.
-    return Promise.resolve().then(() =>
-      toResult(this.next(), request.model ?? this.model, promptTokens),
-    );
+    // Deferred via .then() (not async/await) so a throw from next() (or an
+    // aborted signal) rejects the promise instead of escaping synchronously.
+    return Promise.resolve().then(() => {
+      request.signal?.throwIfAborted();
+      return toResult(this.next(), request.model ?? this.model, promptTokens);
+    });
   }
 
   async *stream(request: CompletionRequest): AsyncIterable<StreamEvent> {
@@ -84,7 +88,11 @@ export class MockLlmProvider implements LlmProvider {
 
     const words = result.content.length > 0 ? result.content.split(/(?<=\s)/) : [];
     for (const delta of words) {
-      await Promise.resolve(); // simulate real streaming's async delivery
+      // Simulates real streaming's async delivery; a configured delay lets
+      // tests abort deterministically mid-stream (issue #47).
+      if (this.streamDelayMs > 0) await new Promise((r) => setTimeout(r, this.streamDelayMs));
+      else await Promise.resolve();
+      request.signal?.throwIfAborted();
       yield { type: 'text-delta', delta };
     }
     for (const toolCall of result.toolCalls ?? []) {

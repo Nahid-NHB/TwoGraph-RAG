@@ -122,7 +122,10 @@ export class OpenAiProvider implements LlmProvider {
   async complete(request: CompletionRequest): Promise<CompletionResult> {
     try {
       const response = await withRetry(
-        () => this.client.chat.completions.create(buildBaseParams(request, this.model)),
+        () =>
+          this.client.chat.completions.create(buildBaseParams(request, this.model), {
+            ...(request.signal ? { signal: request.signal } : {}),
+          }),
         isTransient,
       );
       const choice = response.choices[0];
@@ -155,11 +158,14 @@ export class OpenAiProvider implements LlmProvider {
   async *stream(request: CompletionRequest): AsyncIterable<StreamEvent> {
     const chatStream = await withRetry(
       () =>
-        this.client.chat.completions.create({
-          ...buildBaseParams(request, this.model),
-          stream: true,
-          stream_options: { include_usage: true },
-        }),
+        this.client.chat.completions.create(
+          {
+            ...buildBaseParams(request, this.model),
+            stream: true,
+            stream_options: { include_usage: true },
+          },
+          { ...(request.signal ? { signal: request.signal } : {}) },
+        ),
       isTransient,
     ).catch((err: unknown) => {
       throw toLlmError(err, this.id);

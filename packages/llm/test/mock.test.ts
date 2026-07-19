@@ -70,4 +70,35 @@ describe('MockLlmProvider', () => {
       /no fixtures/,
     );
   });
+
+  it('rejects complete() immediately when the signal is already aborted', async () => {
+    const provider = new MockLlmProvider(['should never be reached']);
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      provider.complete({ messages: [{ role: 'user', content: 'x' }], signal: controller.signal }),
+    ).rejects.toThrow();
+  });
+
+  it('stops streaming once the signal is aborted mid-stream (issue #47)', async () => {
+    const provider = new MockLlmProvider(['one two three four five'], { streamDelayMs: 5 });
+    const controller = new AbortController();
+    const deltas: string[] = [];
+
+    await expect(
+      (async () => {
+        for await (const event of provider.stream({
+          messages: [{ role: 'user', content: 'x' }],
+          signal: controller.signal,
+        })) {
+          if (event.type === 'text-delta') {
+            deltas.push(event.delta);
+            if (deltas.length === 2) controller.abort();
+          }
+        }
+      })(),
+    ).rejects.toThrow();
+
+    expect(deltas.length).toBeLessThan(5);
+  });
 });
