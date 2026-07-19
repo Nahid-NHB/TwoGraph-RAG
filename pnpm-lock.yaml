@@ -286,6 +286,9 @@ importers:
       '@twograph/core':
         specifier: workspace:*
         version: link:../core
+      '@twograph/editing':
+        specifier: workspace:*
+        version: link:../editing
       '@twograph/graph':
         specifier: workspace:*
         version: link:../graph

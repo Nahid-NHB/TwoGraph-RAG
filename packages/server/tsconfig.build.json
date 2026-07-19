@@ -13,6 +13,7 @@
     { "path": "../indexer/tsconfig.build.json" },
     { "path": "../retrieval/tsconfig.build.json" },
     { "path": "../llm/tsconfig.build.json" },
-    { "path": "../rag/tsconfig.build.json" }
+    { "path": "../rag/tsconfig.build.json" },
+    { "path": "../editing/tsconfig.build.json" }
   ]
 }
