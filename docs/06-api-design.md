@@ -93,3 +93,14 @@ twograph mcp [--http]             # MCP server (stdio default)
   "guidelinesFile": ".twograph/guidelines.md",
 }
 ```
+
+`llm.apiKeyEnv` names the environment variable to read the key from — the key itself is never written to config. Defaults per provider when `apiKeyEnv` is unset:
+
+| `llm.provider` | Default `apiKeyEnv`  | Notes                                                                                |
+| -------------- | -------------------- | ------------------------------------------------------------------------------------ |
+| `anthropic`    | `ANTHROPIC_API_KEY`  |                                                                                      |
+| `openai`       | `OPENAI_API_KEY`     |                                                                                      |
+| `gemini`       | `GEMINI_API_KEY`     | Uses Gemini's OpenAI-compatible endpoint                                             |
+| `openrouter`   | `OPENROUTER_API_KEY` | Uses OpenRouter's OpenAI-compatible endpoint                                         |
+| `ollama`       | _(none required)_    | Fully local (`http://localhost:11434`); `apiKeyEnv` optional if your proxy needs one |
+| `mock`         | _(none)_             | Deterministic fixture replay — no network, no key                                    |

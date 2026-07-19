@@ -3,8 +3,11 @@ import { ConfigError, defaultConfig, type TwoGraphConfig } from '@twograph/core'
 import {
   AnthropicProvider,
   createLlmProvider,
+  GeminiProvider,
   MockLlmProvider,
+  OllamaProvider,
   OpenAiProvider,
+  OpenRouterProvider,
 } from '@twograph/llm';
 
 function configWithLlm(llm: TwoGraphConfig['llm']): TwoGraphConfig {
@@ -58,8 +61,21 @@ describe('createLlmProvider', () => {
     );
   });
 
-  it('throws for not-yet-implemented providers', () => {
-    const config = configWithLlm({ provider: 'gemini', model: 'x' });
-    expect(() => createLlmProvider(config, {})).toThrow(/not implemented/);
+  it('creates a GeminiProvider, reading GEMINI_API_KEY by default', () => {
+    const config = configWithLlm({ provider: 'gemini', model: 'gemini-2.5-flash' });
+    const provider = createLlmProvider(config, { GEMINI_API_KEY: 'g-test' });
+    expect(provider).toBeInstanceOf(GeminiProvider);
+  });
+
+  it('creates an OpenRouterProvider, reading OPENROUTER_API_KEY by default', () => {
+    const config = configWithLlm({ provider: 'openrouter', model: 'meta-llama/llama-3.1-70b' });
+    const provider = createLlmProvider(config, { OPENROUTER_API_KEY: 'or-test' });
+    expect(provider).toBeInstanceOf(OpenRouterProvider);
+  });
+
+  it('creates an OllamaProvider without requiring any API key', () => {
+    const config = configWithLlm({ provider: 'ollama', model: 'llama3' });
+    const provider = createLlmProvider(config, {});
+    expect(provider).toBeInstanceOf(OllamaProvider);
   });
 });

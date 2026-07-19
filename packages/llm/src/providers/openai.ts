@@ -22,14 +22,14 @@ function isTransient(err: unknown): boolean {
   return status === 429 || (status !== undefined && status >= 500);
 }
 
-function toLlmError(err: unknown): LlmError {
+function toLlmError(err: unknown, provider: string): LlmError {
   if (err instanceof OpenAI.APIError) {
     return new LlmError(err.status === 429 ? 'LLM_RATE_LIMITED' : 'LLM_FAILED', err.message, {
       cause: err,
-      details: { status: err.status, provider: 'openai' },
+      details: { status: err.status, provider },
     });
   }
-  return new LlmError('LLM_FAILED', String(err), { cause: err, details: { provider: 'openai' } });
+  return new LlmError('LLM_FAILED', String(err), { cause: err, details: { provider } });
 }
 
 function toOpenAiMessages(messages: Message[]): ChatCompletionMessageParam[] {
@@ -100,13 +100,18 @@ function parseToolCallArgs(json: string): Record<string, unknown> {
 
 const ZERO_USAGE: Usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
-/** OpenAI implementation of the provider-agnostic LlmProvider contract. */
+/**
+ * OpenAI implementation of the provider-agnostic LlmProvider contract. Also
+ * doubles as the transport for any OpenAI-compatible endpoint (Gemini's
+ * compat layer, Ollama, OpenRouter) via `baseUrl` + `id` — see factory.ts.
+ */
 export class OpenAiProvider implements LlmProvider {
-  readonly id = 'openai';
+  readonly id: string;
   private readonly client: OpenAI;
   private readonly model: string;
 
-  constructor(options: { apiKey: string; model: string; baseUrl?: string }) {
+  constructor(options: { apiKey: string; model: string; baseUrl?: string; id?: string }) {
+    this.id = options.id ?? 'openai';
     this.client = new OpenAI({
       apiKey: options.apiKey,
       ...(options.baseUrl ? { baseURL: options.baseUrl } : {}),
@@ -143,7 +148,7 @@ export class OpenAiProvider implements LlmProvider {
         model: response.model,
       };
     } catch (err) {
-      throw toLlmError(err);
+      throw toLlmError(err, this.id);
     }
   }
 
@@ -157,7 +162,7 @@ export class OpenAiProvider implements LlmProvider {
         }),
       isTransient,
     ).catch((err: unknown) => {
-      throw toLlmError(err);
+      throw toLlmError(err, this.id);
     });
 
     let content = '';
@@ -192,7 +197,7 @@ export class OpenAiProvider implements LlmProvider {
         }
       }
     } catch (err) {
-      throw toLlmError(err);
+      throw toLlmError(err, this.id);
     }
 
     const toolCalls: ToolCall[] = [...toolCallsByIndex.values()].map((tc) => ({
