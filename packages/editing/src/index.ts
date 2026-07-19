@@ -38,3 +38,8 @@ export {
   moveFunctionParamsSchema,
   type MoveFunctionParams,
 } from './operations/move-function.js';
+export {
+  extractFunction,
+  extractFunctionParamsSchema,
+  type ExtractFunctionParams,
+} from './operations/extract-function.js';
