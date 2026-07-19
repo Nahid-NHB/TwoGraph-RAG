@@ -173,6 +173,16 @@ export class GraphQueries {
     return { nodes: [...nodes.values()], edges };
   }
 
+  /** Paths of files that IMPORT the given file — used to scope AST edit projects (issue #48). */
+  async dependentFiles(repo: string, path: string): Promise<string[]> {
+    const rows = await this.client.run(
+      `MATCH (d:File {repoId: $repo})-[:IMPORTS]->(:File {id: $fileId})
+       RETURN d.path AS path`,
+      { repo, fileId: `${repo}:${path}` },
+    );
+    return rows.map((r) => r.get('path') as string);
+  }
+
   /** All file paths of a repository (explorer tree is built client-side). */
   async filePaths(repo: string): Promise<string[]> {
     const rows = await this.client.run(
