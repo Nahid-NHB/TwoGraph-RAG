@@ -12,3 +12,11 @@ export {
   type RagPipelineDeps,
   type RagPipelineOptions,
 } from './pipeline.js';
+export {
+  askInSession,
+  condenseFollowUp,
+  loadHistory,
+  type AskInSessionDeps,
+  type AskInSessionResult,
+  type ChatMessage,
+} from './chat.js';

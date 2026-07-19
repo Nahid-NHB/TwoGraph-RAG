@@ -9,6 +9,8 @@ export {
 } from './fts.js';
 export {
   MetadataStore,
+  type ChatMessageRow,
+  type ChatSessionRow,
   type ChunkRow,
   type FileRow,
   type IndexRunRow,

@@ -1,10 +1,10 @@
 import { Command } from 'commander';
 import { runInit } from './commands/init.js';
 import { runIndex } from './commands/index-repo.js';
+import { runQuery } from './commands/query.js';
 import { runSearch } from './commands/search.js';
 
 const NOT_IMPLEMENTED: ReadonlyArray<{ name: string; args: string; description: string }> = [
-  { name: 'query', args: '<question>', description: 'Ask a natural-language question (RAG)' },
   { name: 'graph', args: '<template>', description: 'Run a graph query template' },
   { name: 'deadcode', args: '', description: 'Report unreachable code from entry points' },
   { name: 'serve', args: '', description: 'Start the REST API server' },
@@ -56,6 +56,15 @@ export function buildProgram(io: ProgramIo = { out: console.log, err: console.er
         await runSearch(process.cwd(), query, { ...opts, json }, io);
       },
     );
+
+  program
+    .command('query <question>')
+    .description('Ask a natural-language question (RAG)')
+    .action(async (question: string) => {
+      // --json is declared globally (shared with other commands), not per-command.
+      const json = Boolean(program.opts()['json']);
+      await runQuery(process.cwd(), question, { json }, io);
+    });
 
   for (const cmd of NOT_IMPLEMENTED) {
     const c = program.command(`${cmd.name} ${cmd.args}`.trim()).description(cmd.description);

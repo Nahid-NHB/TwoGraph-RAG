@@ -1,6 +1,6 @@
 import { basename, join, resolve } from 'node:path';
 import { hashContent, loadConfig, type TwoGraphConfig } from '@twograph/core';
-import { GraphClient } from '@twograph/graph';
+import { GraphClient, GraphQueries } from '@twograph/graph';
 import { FtsIndex, MetadataStore, openDatabase } from '@twograph/store';
 import {
   createEmbedder,
@@ -15,6 +15,7 @@ export interface RepoContext {
   store: MetadataStore;
   fts: FtsIndex;
   graphClient: GraphClient;
+  graphQueries: GraphQueries;
   embedder: Embedder;
   vectors: VectorStore;
   close(): Promise<void>;
@@ -47,6 +48,7 @@ export function openRepoContext(rootPath: string): RepoContext {
     store: new MetadataStore(db),
     fts: new FtsIndex(db),
     graphClient,
+    graphQueries: new GraphQueries(graphClient),
     embedder,
     vectors,
     close: () => graphClient.close(),

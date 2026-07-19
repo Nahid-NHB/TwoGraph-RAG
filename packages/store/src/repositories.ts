@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
-import type { ParsedFile } from '@twograph/core';
+import type { Citation, ParsedFile } from '@twograph/core';
 
 export interface RepoRow {
   id: string;
@@ -42,6 +42,22 @@ export interface ChunkRow {
   content: string;
   content_hash: string;
   embedded_at: string | null;
+}
+
+export interface ChatSessionRow {
+  id: string;
+  repo_id: string;
+  title: string | null;
+  created_at: string;
+}
+
+export interface ChatMessageRow {
+  id: string;
+  session_id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  citations_json: string | null;
+  created_at: string;
 }
 
 export interface IndexRunRow {
@@ -204,6 +220,62 @@ export class MetadataStore {
     this.db
       .prepare(`UPDATE chunks SET embedded_at = datetime('now') WHERE id IN (${placeholders})`)
       .run(...chunkIds);
+  }
+
+  // ---- chat sessions & messages (issue #45) ----
+  createChatSession(repoId: string, title?: string): ChatSessionRow {
+    const id = randomUUID();
+    this.db
+      .prepare(`INSERT INTO chat_sessions (id, repo_id, title) VALUES (?, ?, ?)`)
+      .run(id, repoId, title ?? null);
+    const row = this.getChatSession(id);
+    if (!row) throw new Error(`failed to create chat session ${id}`);
+    return row;
+  }
+
+  getChatSession(id: string): ChatSessionRow | undefined {
+    return this.db.prepare(`SELECT * FROM chat_sessions WHERE id = ?`).get(id) as
+      ChatSessionRow | undefined;
+  }
+
+  /** Returns the repo's most recent session, creating one if none exists — the
+   * "implicit session" the CLI uses so repeated `twograph query` calls chain. */
+  getOrCreateImplicitSession(repoId: string): ChatSessionRow {
+    const existing = this.db
+      .prepare(`SELECT * FROM chat_sessions WHERE repo_id = ? ORDER BY created_at DESC LIMIT 1`)
+      .get(repoId) as ChatSessionRow | undefined;
+    return existing ?? this.createChatSession(repoId);
+  }
+
+  listChatSessions(repoId: string): ChatSessionRow[] {
+    return this.db
+      .prepare(`SELECT * FROM chat_sessions WHERE repo_id = ? ORDER BY created_at`)
+      .all(repoId) as unknown as ChatSessionRow[];
+  }
+
+  addChatMessage(
+    sessionId: string,
+    role: 'user' | 'assistant',
+    content: string,
+    citations: Citation[] = [],
+  ): ChatMessageRow {
+    const id = randomUUID();
+    this.db
+      .prepare(
+        `INSERT INTO chat_messages (id, session_id, role, content, citations_json)
+         VALUES (?, ?, ?, ?, ?)`,
+      )
+      .run(id, sessionId, role, content, citations.length > 0 ? JSON.stringify(citations) : null);
+    const row = this.db.prepare(`SELECT * FROM chat_messages WHERE id = ?`).get(id) as
+      ChatMessageRow | undefined;
+    if (!row) throw new Error(`failed to add chat message ${id}`);
+    return row;
+  }
+
+  listChatMessages(sessionId: string): ChatMessageRow[] {
+    return this.db
+      .prepare(`SELECT * FROM chat_messages WHERE session_id = ? ORDER BY created_at`)
+      .all(sessionId) as unknown as ChatMessageRow[];
   }
 
   // ---- index runs ----
