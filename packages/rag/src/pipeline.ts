@@ -1,6 +1,6 @@
 import { createLogger, type Citation, type RankedHit } from '@twograph/core';
 import type { GraphQueries } from '@twograph/graph';
-import type { LlmProvider, Usage } from '@twograph/llm';
+import type { CompletionResult, LlmProvider, Usage } from '@twograph/llm';
 import {
   assembleContext,
   expandSeeds,
@@ -51,6 +51,13 @@ export interface RagPipelineOptions {
   topCandidatesForRerank?: number;
   /** Reranked symbols that make it into the assembled context. Default 8. */
   topSymbolsForContext?: number;
+  /** Called at the start of each stage — drives SSE `stage` progress events (issue #47). */
+  onStage?: (stage: string) => void;
+  /** When set, the generate stage streams via `llm.stream()` instead of `llm.complete()`,
+   * invoking this per text delta — drives SSE `token` events (issue #47). */
+  onToken?: (delta: string) => void;
+  /** Propagated into every LLM call; aborting cancels the in-flight LLM request (issue #47). */
+  signal?: AbortSignal;
 }
 
 export interface RagAnswer {
@@ -77,6 +84,22 @@ async function timed<T>(
   const ms = performance.now() - started;
   timings[stage] = ms;
   log.info({ stage, ms: Math.round(ms) }, 'rag stage complete');
+  return result;
+}
+
+/** Drains `llm.stream()`, forwarding each text delta to `onToken`, and returns the final result. */
+async function streamCompletion(
+  llm: LlmProvider,
+  messages: { role: 'system' | 'user'; content: string }[],
+  onToken: (delta: string) => void,
+  signal?: AbortSignal,
+): Promise<CompletionResult> {
+  let result: CompletionResult | undefined;
+  for await (const event of llm.stream({ messages, ...(signal ? { signal } : {}) })) {
+    if (event.type === 'text-delta') onToken(event.delta);
+    else if (event.type === 'done') result = event.result;
+  }
+  if (!result) throw new Error('llm.stream() ended without a done event');
   return result;
 }
 
@@ -129,10 +152,12 @@ export async function runRagPipeline(
   const k = options.topKPerRetriever ?? 20;
   const graphPathBySymbol = new Map<string, string>();
 
+  options.onStage?.('multiquery');
   const multiQuery = await timed(stageTimings, 'multiquery', () =>
-    generateMultiQuery(deps.llm, question),
+    generateMultiQuery(deps.llm, question, options.signal),
   );
 
+  options.onStage?.('retrieve');
   const { bm25Lists, vectorLists, graphHits } = await timed(stageTimings, 'retrieve', async () => {
     const graphRetriever = new GraphRetriever(deps.graphQueries, repo);
     const bm25: RankedHit[][] = [];
@@ -151,6 +176,7 @@ export async function runRagPipeline(
   for (const hit of graphHits)
     if (hit.graphPath) graphPathBySymbol.set(hit.symbolId, hit.graphPath);
 
+  options.onStage?.('expand');
   const expansionHits = await timed(stageTimings, 'expand', async () => {
     const seeds = [...bm25Lists.flat(), ...vectorLists.flat()].sort((a, b) => b.score - a.score);
     const expanded = await expandSeeds(deps.graphQueries, repo, seeds, {
@@ -161,10 +187,12 @@ export async function runRagPipeline(
     return expanded;
   });
 
+  options.onStage?.('fuse');
   const fused = await timed(stageTimings, 'fuse', () =>
     Promise.resolve(fuseRankedLists([...bm25Lists, ...vectorLists, graphHits, expansionHits])),
   );
 
+  options.onStage?.('rerank');
   const reranked = await timed(stageTimings, 'rerank', () => {
     const candidates = hydrateForRerank(
       deps.store,
@@ -175,6 +203,7 @@ export async function runRagPipeline(
 
   const topSymbolIds = reranked.slice(0, options.topSymbolsForContext ?? 8).map((h) => h.symbolId);
 
+  options.onStage?.('assemble');
   const assembled = await timed(stageTimings, 'assemble', () =>
     assembleContext(
       {
@@ -200,13 +229,19 @@ export async function runRagPipeline(
   }
 
   const contextText = assembled.blocks.map((b) => b.text).join('\n\n---\n\n');
+  const generateMessages = [
+    { role: 'system' as const, content: GROUNDING_SYSTEM_PROMPT },
+    { role: 'user' as const, content: `Context:\n${contextText}\n\nQuestion: ${question}` },
+  ];
+
+  options.onStage?.('generate');
   const completion = await timed(stageTimings, 'generate', () =>
-    deps.llm.complete({
-      messages: [
-        { role: 'system', content: GROUNDING_SYSTEM_PROMPT },
-        { role: 'user', content: `Context:\n${contextText}\n\nQuestion: ${question}` },
-      ],
-    }),
+    options.onToken
+      ? streamCompletion(deps.llm, generateMessages, options.onToken, options.signal)
+      : deps.llm.complete({
+          messages: generateMessages,
+          ...(options.signal ? { signal: options.signal } : {}),
+        }),
   );
 
   return {

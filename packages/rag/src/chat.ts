@@ -48,6 +48,7 @@ export async function condenseFollowUp(
   llm: LlmProvider,
   history: ChatMessage[],
   question: string,
+  signal?: AbortSignal,
 ): Promise<string> {
   if (history.length === 0) return question;
   const transcript = history.map((m) => `${m.role}: ${m.content}`).join('\n');
@@ -62,10 +63,14 @@ export async function condenseFollowUp(
       ],
       temperature: 0,
       maxTokens: 100,
+      ...(signal ? { signal } : {}),
     });
     const rewritten = result.content.trim();
     return rewritten.length > 0 ? rewritten : question;
-  } catch {
+  } catch (err) {
+    // A caller-initiated abort should halt the whole pipeline, not be
+    // absorbed as an ordinary LLM failure (issue #47).
+    if (signal?.aborted) throw err;
     return question;
   }
 }
@@ -94,7 +99,12 @@ export async function askInSession(
   options: RagPipelineOptions,
 ): Promise<AskInSessionResult> {
   const history = loadHistory(deps.store, sessionId);
-  const standaloneQuestion = await condenseFollowUp(deps.pipeline.llm, history, question);
+  const standaloneQuestion = await condenseFollowUp(
+    deps.pipeline.llm,
+    history,
+    question,
+    options.signal,
+  );
   const answer = await runRagPipeline(deps.pipeline, standaloneQuestion, options);
 
   deps.store.addChatMessage(sessionId, 'user', question);

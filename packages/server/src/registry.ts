@@ -1,6 +1,8 @@
 import { basename, join } from 'node:path';
 import { hashContent, loadConfig, NotFoundError, type TwoGraphConfig } from '@twograph/core';
 import { GraphClient, GraphQueries } from '@twograph/graph';
+import { createLlmProvider, type LlmProvider } from '@twograph/llm';
+import { CrossEncoderReranker, type Reranker } from '@twograph/retrieval';
 import { FtsIndex, MetadataStore, openDatabase } from '@twograph/store';
 import {
   createEmbedder,
@@ -20,6 +22,9 @@ export interface RegisteredRepo {
   graphQueries: GraphQueries;
   embedder: Embedder;
   vectors: VectorStore;
+  llm: LlmProvider;
+  /** Shared across requests — the cross-encoder loads its ONNX model once (issue #47). */
+  reranker: Reranker;
 }
 
 /** Derived from the resolved root path, matching the CLI so both agree on repo identity. */
@@ -35,7 +40,16 @@ export function repoIdFor(rootPath: string): string {
 export class RepoRegistry {
   private readonly repos = new Map<string, RegisteredRepo>();
 
-  register(rootPath: string, name?: string): RegisteredRepo {
+  /**
+   * `overrides` lets tests substitute a dependency (e.g. a `MockLlmProvider`
+   * with a configured stream delay) without the server ever needing to know
+   * about test-only concerns itself.
+   */
+  register(
+    rootPath: string,
+    name?: string,
+    overrides: Partial<RegisteredRepo> = {},
+  ): RegisteredRepo {
     const id = repoIdFor(rootPath);
     const existing = this.repos.get(id);
     if (existing) return existing;
@@ -64,6 +78,9 @@ export class RepoRegistry {
       graphQueries: new GraphQueries(graphClient),
       embedder,
       vectors,
+      llm: createLlmProvider(config),
+      reranker: new CrossEncoderReranker(),
+      ...overrides,
     };
     this.repos.set(id, repo);
     return repo;

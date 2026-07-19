@@ -118,4 +118,14 @@ describe('generateMultiQuery', () => {
     expect(result.graphIntent).toEqual({ template: 'who_calls', params: { name: 'verifyToken' } });
     expect(result.queries).toEqual(['who calls verifyToken']);
   });
+
+  it('propagates an abort instead of falling back, when the signal is already aborted (issue #47)', async () => {
+    const llm = new MockLlmProvider(['should never be reached']);
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      generateMultiQuery(llm, 'how does auth work', controller.signal),
+    ).rejects.toThrow();
+  });
 });

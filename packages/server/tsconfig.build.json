@@ -11,6 +11,8 @@
     { "path": "../store/tsconfig.build.json" },
     { "path": "../vector/tsconfig.build.json" },
     { "path": "../indexer/tsconfig.build.json" },
-    { "path": "../retrieval/tsconfig.build.json" }
+    { "path": "../retrieval/tsconfig.build.json" },
+    { "path": "../llm/tsconfig.build.json" },
+    { "path": "../rag/tsconfig.build.json" }
   ]
 }

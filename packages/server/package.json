@@ -22,6 +22,8 @@
     "@twograph/core": "workspace:*",
     "@twograph/graph": "workspace:*",
     "@twograph/indexer": "workspace:*",
+    "@twograph/llm": "workspace:*",
+    "@twograph/rag": "workspace:*",
     "@twograph/retrieval": "workspace:*",
     "@twograph/store": "workspace:*",
     "@twograph/vector": "workspace:*",

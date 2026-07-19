@@ -122,7 +122,7 @@ beforeAll(async () => {
   mkdirSync(join(root, '.twograph'), { recursive: true });
   writeFileSync(
     join(root, '.twograph', 'config.json'),
-    JSON.stringify({ embedder: { provider: 'mock' } }),
+    JSON.stringify({ embedder: { provider: 'mock' }, llm: { provider: 'mock', model: 'mock' } }),
   );
 
   app = await buildServer();

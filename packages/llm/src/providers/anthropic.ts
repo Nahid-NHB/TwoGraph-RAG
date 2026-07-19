@@ -124,7 +124,10 @@ export class AnthropicProvider implements LlmProvider {
     const { system, rest } = splitSystemPrompt(request.messages);
     try {
       const response = await withRetry(
-        () => this.client.messages.create(buildBaseParams(request, rest, system, this.model)),
+        () =>
+          this.client.messages.create(buildBaseParams(request, rest, system, this.model), {
+            ...(request.signal ? { signal: request.signal } : {}),
+          }),
         isTransient,
       );
 
@@ -160,10 +163,13 @@ export class AnthropicProvider implements LlmProvider {
     const { system, rest } = splitSystemPrompt(request.messages);
     const events = await withRetry(
       () =>
-        this.client.messages.create({
-          ...buildBaseParams(request, rest, system, this.model),
-          stream: true,
-        }),
+        this.client.messages.create(
+          {
+            ...buildBaseParams(request, rest, system, this.model),
+            stream: true,
+          },
+          { ...(request.signal ? { signal: request.signal } : {}) },
+        ),
       isTransient,
     ).catch((err: unknown) => {
       throw toLlmError(err);

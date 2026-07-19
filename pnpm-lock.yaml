@@ -261,6 +261,12 @@ importers:
       '@twograph/indexer':
         specifier: workspace:*
         version: link:../indexer
+      '@twograph/llm':
+        specifier: workspace:*
+        version: link:../llm
+      '@twograph/rag':
+        specifier: workspace:*
+        version: link:../rag
       '@twograph/retrieval':
         specifier: workspace:*
         version: link:../retrieval
