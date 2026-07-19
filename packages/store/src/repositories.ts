@@ -141,6 +141,54 @@ export class MetadataStore {
       .all(...ids) as unknown as SymbolRow[];
   }
 
+  // ---- chunks (embedding bookkeeping) ----
+  /** content_hash + embedded_at per chunk id for the given file's symbols. */
+  chunkStates(symbolIds: string[]): Map<string, { hash: string; embeddedAt: string | null }> {
+    if (symbolIds.length === 0) return new Map();
+    const placeholders = symbolIds.map(() => '?').join(',');
+    const rows = this.db
+      .prepare(
+        `SELECT id, content_hash, embedded_at FROM chunks WHERE symbol_id IN (${placeholders})`,
+      )
+      .all(...symbolIds) as unknown as {
+      id: string;
+      content_hash: string;
+      embedded_at: string | null;
+    }[];
+    return new Map(rows.map((r) => [r.id, { hash: r.content_hash, embeddedAt: r.embedded_at }]));
+  }
+
+  /** Inserts chunks, carrying over embedded_at where the content is unchanged. */
+  insertChunks(
+    chunks: { id: string; symbolId: string; repo: string; content: string; contentHash: string }[],
+    carryOver: Map<string, { hash: string; embeddedAt: string | null }>,
+  ): void {
+    const insert = this.db.prepare(
+      `INSERT OR REPLACE INTO chunks (id, symbol_id, repo_id, content, content_hash, embedded_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    );
+    for (const chunk of chunks) {
+      const prior = carryOver.get(chunk.id);
+      const embeddedAt = prior && prior.hash === chunk.contentHash ? prior.embeddedAt : null;
+      insert.run(
+        chunk.id,
+        chunk.symbolId,
+        chunk.repo,
+        chunk.content,
+        chunk.contentHash,
+        embeddedAt,
+      );
+    }
+  }
+
+  markChunksEmbedded(chunkIds: string[]): void {
+    if (chunkIds.length === 0) return;
+    const placeholders = chunkIds.map(() => '?').join(',');
+    this.db
+      .prepare(`UPDATE chunks SET embedded_at = datetime('now') WHERE id IN (${placeholders})`)
+      .run(...chunkIds);
+  }
+
   // ---- index runs ----
   startIndexRun(repoId: string, kind: 'full' | 'incremental' | 'watch'): string {
     const id = randomUUID();
