@@ -25,6 +25,7 @@ jobs:
       - run: pnpm lint:boundaries
       - run: pnpm format:check
       - run: pnpm build
+      - run: pnpm --filter @twograph/web build
       - run: pnpm test
 
   integration:

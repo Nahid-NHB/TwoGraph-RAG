@@ -11,14 +11,19 @@ export interface FileTreeNode {
   children: FileTreeNode[];
 }
 
-const fileTreeNodeSchema: z.ZodType<FileTreeNode> = z.lazy(() =>
-  z.object({
-    name: z.string(),
-    path: z.string(),
-    type: z.enum(['file', 'directory']),
-    children: z.array(fileTreeNodeSchema),
-  }),
-);
+// A truly recursive `z.lazy()` schema here produces a `$ref` cycle that the
+// OpenAPI generator (fastify-swagger's zod transform) can't resolve — it
+// emits a dangling `$ref` with no matching `components.schemas` entry, which
+// crashes `openapi-typescript` client generation. `children` is left as
+// `unknown[]` at the validation/doc layer (still passed through unmodified,
+// since zod's `unknown` doesn't reshape values); `FileTreeNode` above is the
+// real, fully-recursive TypeScript type the route handler actually returns.
+const fileTreeNodeSchema = z.object({
+  name: z.string(),
+  path: z.string(),
+  type: z.enum(['file', 'directory']),
+  children: z.array(z.unknown()),
+});
 
 /** Builds a nested tree from flat repo-relative POSIX paths, dirs sorted before files. */
 export function buildFileTree(paths: string[]): FileTreeNode[] {
