@@ -7,6 +7,7 @@
     { "path": "packages/graph/tsconfig.build.json" },
     { "path": "packages/store/tsconfig.build.json" },
     { "path": "packages/vector/tsconfig.build.json" },
-    { "path": "packages/indexer/tsconfig.build.json" }
+    { "path": "packages/indexer/tsconfig.build.json" },
+    { "path": "packages/retrieval/tsconfig.build.json" }
   ]
 }

@@ -177,6 +177,24 @@ importers:
         specifier: ^0.25.10
         version: 0.25.10
 
+  packages/retrieval:
+    dependencies:
+      '@twograph/core':
+        specifier: workspace:*
+        version: link:../core
+      '@twograph/graph':
+        specifier: workspace:*
+        version: link:../graph
+      '@twograph/indexer':
+        specifier: workspace:*
+        version: link:../indexer
+      '@twograph/store':
+        specifier: workspace:*
+        version: link:../store
+      '@twograph/vector':
+        specifier: workspace:*
+        version: link:../vector
+
   packages/store:
     dependencies:
       '@twograph/core':

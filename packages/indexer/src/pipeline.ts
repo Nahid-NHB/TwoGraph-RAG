@@ -121,7 +121,29 @@ export class Indexer {
         resolveOpts,
       );
 
-      // 3) graph + store + chunks + embeddings per touched file
+      // 3) nodes-only pass for every touched file first — guarantees every
+      // symbol node exists before any edge pass runs. Writing nodes and edges
+      // file-by-file silently dropped CALLS/USES/etc. edges whenever the
+      // callee lived in a file that sorts alphabetically after the caller,
+      // since the MATCH on the not-yet-created target node found nothing.
+      const nodesWritten: string[] = [];
+      for (const path of touched) {
+        const parsed = parsedByPath.get(path);
+        if (!parsed) continue;
+        try {
+          if (diff.changed.includes(path)) {
+            await this.writer.removeFileSubgraph(repo.id, path);
+          }
+          await this.writer.writeParsedFile(parsed);
+          nodesWritten.push(path);
+        } catch (err) {
+          errors.push({ path, message: String(err) });
+          hashes.delete(path);
+          log.warn({ path, err: String(err) }, 'file indexing failed; will retry next run');
+        }
+      }
+
+      // 4) edges + store + chunks + embeddings per touched file
       let graphCount = 0;
       const toEmbed: {
         chunkId: string;
@@ -130,21 +152,26 @@ export class Indexer {
         meta: { kind: string; path: string; language: string; name: string; exported: boolean };
       }[] = [];
 
-      for (const path of touched) {
+      for (const path of nodesWritten) {
         const parsed = parsedByPath.get(path);
         if (!parsed) continue;
         try {
           const fileId = `${repo.id}:${path}`;
           const oldSymbolIds = store.symbolsByFile(fileId).map((s) => s.id);
-          const dependentPaths = await this.writer.dependentFiles(repo.id, path);
-          const dependents = dependentPaths
-            .map((p) => parsedByPath.get(p))
-            .filter((f): f is ParsedFile => !!f);
+
+          await this.writer.writeStructuralEdges(parsed, resolver);
+          await this.writer.writeBehavioralEdges(parsed);
+          await this.writer.writeReactEdges(parsed);
 
           if (diff.changed.includes(path)) {
-            await this.writer.updateFile(parsed, resolver, dependents);
-          } else {
-            await this.writer.writeFileComplete(parsed, resolver);
+            const dependentPaths = await this.writer.dependentFiles(repo.id, path);
+            for (const depPath of dependentPaths) {
+              const dep = parsedByPath.get(depPath);
+              if (!dep) continue;
+              await this.writer.writeStructuralEdges(dep, resolver);
+              await this.writer.writeBehavioralEdges(dep);
+              await this.writer.writeReactEdges(dep);
+            }
           }
 
           // Metadata + chunk sync with embedding gate.
@@ -195,10 +222,10 @@ export class Indexer {
           hashes.delete(path);
           log.warn({ path, err: String(err) }, 'file indexing failed; will retry next run');
         }
-        this.onProgress({ stage: 'graph', current: ++graphCount, total: touched.length });
+        this.onProgress({ stage: 'graph', current: ++graphCount, total: nodesWritten.length });
       }
 
-      // 4) removed files: purge everywhere.
+      // 5) removed files: purge everywhere.
       for (const path of diff.removed) {
         const fileId = `${repo.id}:${path}`;
         const symbolIds = store.symbolsByFile(fileId).map((s) => s.id);
@@ -208,7 +235,7 @@ export class Indexer {
         store.deleteFile(repo.id, path);
       }
 
-      // 5) embed pending chunks in batches.
+      // 6) embed pending chunks in batches.
       let embedded = 0;
       this.onProgress({ stage: 'embed', current: 0, total: toEmbed.length });
       const BATCH = 32;

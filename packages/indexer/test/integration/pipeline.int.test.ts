@@ -61,6 +61,11 @@ describe('Indexer end-to-end', () => {
     // Graph
     const callers = await queries.callers(REPO, `${REPO}:api/client.ts#fetchJson`, 1);
     expect(callers.map((c) => c.name)).toContain('fetchUser');
+    // Regression: caller (api/handlers.ts) sorts alphabetically before its
+    // callee (auth/jwt.ts) — a CALLS edge here proves the indexer writes all
+    // touched files' nodes before writing any edges, not file-by-file.
+    const jwtCallers = await queries.callers(REPO, `${REPO}:auth/jwt.ts#verifyToken`, 1);
+    expect(jwtCallers.map((c) => c.name)).toContain('isAuthorized');
     // FTS
     expect(fts.search(REPO, 'verify token').some((h) => h.path === 'auth/jwt.ts')).toBe(true);
     // Vectors

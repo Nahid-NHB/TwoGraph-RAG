@@ -88,6 +88,15 @@ export class GraphQueries {
     return rows.map((r) => ({ ...toSummary(r), depth: r.get('depth') as number }));
   }
 
+  /** Exact name match — the seed lookup behind name-anchored graph intents. */
+  async findByName(repo: string, name: string): Promise<GraphNodeSummary[]> {
+    const rows = await this.client.run(
+      `MATCH (s {name: $name, repoId: $repo}) RETURN ${RETURN_SUMMARY('s')}`,
+      { name, repo },
+    );
+    return rows.map((r) => toSummary(r));
+  }
+
   /** Immediate neighbors grouped by direction and edge type. */
   async neighbors(
     repo: string,
