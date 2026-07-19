@@ -179,6 +179,9 @@ importers:
 
   packages/retrieval:
     dependencies:
+      '@huggingface/transformers':
+        specifier: ^3.8.1
+        version: 3.8.1
       '@twograph/core':
         specifier: workspace:*
         version: link:../core
