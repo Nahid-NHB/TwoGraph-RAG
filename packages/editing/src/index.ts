@@ -8,3 +8,13 @@ export {
   type EditOperationResult,
 } from './registry.js';
 export { planEdit, type PlanEditDeps } from './engine.js';
+export { writeFilesAtomically } from './apply.js';
+export {
+  proposeEdit,
+  approveEdit,
+  rejectEdit,
+  revertEdit,
+  DEFAULT_EDIT_EXPIRY_MS,
+  type ProposeEditDeps,
+  type ApproveEditDeps,
+} from './approval.js';

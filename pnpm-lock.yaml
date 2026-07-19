@@ -141,6 +141,9 @@ importers:
       '@twograph/graph':
         specifier: workspace:*
         version: link:../graph
+      '@twograph/store':
+        specifier: workspace:*
+        version: link:../store
       diff:
         specifier: ^9.0.0
         version: 9.0.0
