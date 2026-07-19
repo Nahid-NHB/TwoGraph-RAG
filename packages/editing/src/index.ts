@@ -23,3 +23,13 @@ export {
   renameSymbolParamsSchema,
   type RenameSymbolParams,
 } from './operations/rename-symbol.js';
+export {
+  addParameter,
+  addParameterParamsSchema,
+  type AddParameterParams,
+} from './operations/add-parameter.js';
+export {
+  removeParameter,
+  removeParameterParamsSchema,
+  type RemoveParameterParams,
+} from './operations/remove-parameter.js';
