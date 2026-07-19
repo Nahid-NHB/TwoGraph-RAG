@@ -33,3 +33,8 @@ export {
   removeParameterParamsSchema,
   type RemoveParameterParams,
 } from './operations/remove-parameter.js';
+export {
+  moveFunction,
+  moveFunctionParamsSchema,
+  type MoveFunctionParams,
+} from './operations/move-function.js';

@@ -7,6 +7,7 @@ import {
   type FunctionExpression,
   type Identifier,
   type SourceFile,
+  type Statement,
 } from 'ts-morph';
 
 export type FunctionLike = FunctionDeclaration | ArrowFunction | FunctionExpression;
@@ -15,12 +16,14 @@ export interface ResolvedFunction {
   fn: FunctionLike;
   /** The identifier callers reference — the function's own name, or the `const` it's bound to. */
   nameNode: Identifier;
+  /** The top-level statement to remove/relocate whole: the FunctionDeclaration itself, or the const's VariableStatement. */
+  statement: Statement;
 }
 
 /**
  * Resolves a top-level `function foo() {}` or `const foo = () => {}` /
  * `const foo = function () {}` declaration by name. Shared by the signature-
- * editing operations (add/remove parameter, and future ones).
+ * editing operations (add/remove parameter, move_function, and future ones).
  */
 export function resolveTopLevelFunction(sourceFile: SourceFile, name: string): ResolvedFunction {
   const fn = sourceFile.getFunction(name);
@@ -29,7 +32,7 @@ export function resolveTopLevelFunction(sourceFile: SourceFile, name: string): R
     if (!nameNode) {
       throw new EditError('EDIT_INVALID', `function "${name}" has no name node`);
     }
-    return { fn, nameNode };
+    return { fn, nameNode, statement: fn };
   }
 
   const variable = sourceFile.getVariableDeclaration(name);
@@ -41,7 +44,7 @@ export function resolveTopLevelFunction(sourceFile: SourceFile, name: string): R
     ) {
       const nameNode = variable.getNameNode();
       if (Node.isIdentifier(nameNode)) {
-        return { fn: initializer, nameNode };
+        return { fn: initializer, nameNode, statement: variable.getVariableStatementOrThrow() };
       }
     }
   }
