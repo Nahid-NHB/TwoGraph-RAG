@@ -1,5 +1,6 @@
 export type { Retriever, RetrieveFilters, RetrieveOptions } from './retriever.js';
 export { fuseRankedLists, type FuseOptions } from './fusion.js';
+export { expandSeeds, type ExpandOptions } from './expansion.js';
 export {
   CrossEncoderReranker,
   maybeRerank,
