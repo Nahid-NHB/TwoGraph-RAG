@@ -22,6 +22,10 @@
   },
   "dependencies": {
     "@twograph/core": "workspace:*",
+    "@twograph/graph": "workspace:*",
+    "@twograph/indexer": "workspace:*",
+    "@twograph/store": "workspace:*",
+    "@twograph/vector": "workspace:*",
     "commander": "^14.0.2"
   }
 }

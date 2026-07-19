@@ -12,3 +12,4 @@ export {
   type IndexRunResult,
   type IndexStage,
 } from './pipeline.js';
+export { semanticSearch, type SemanticHit, type SemanticSearchDeps } from './search.js';

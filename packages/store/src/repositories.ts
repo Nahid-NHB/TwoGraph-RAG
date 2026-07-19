@@ -35,6 +35,15 @@ export interface SymbolRow {
   content_hash: string;
 }
 
+export interface ChunkRow {
+  id: string;
+  symbol_id: string;
+  repo_id: string;
+  content: string;
+  content_hash: string;
+  embedded_at: string | null;
+}
+
 export interface IndexRunRow {
   id: string;
   repo_id: string;
@@ -179,6 +188,14 @@ export class MetadataStore {
         embeddedAt,
       );
     }
+  }
+
+  chunksByIds(ids: string[]): ChunkRow[] {
+    if (ids.length === 0) return [];
+    const placeholders = ids.map(() => '?').join(',');
+    return this.db
+      .prepare(`SELECT * FROM chunks WHERE id IN (${placeholders})`)
+      .all(...ids) as unknown as ChunkRow[];
   }
 
   markChunksEmbedded(chunkIds: string[]): void {

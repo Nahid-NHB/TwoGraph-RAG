@@ -9,6 +9,7 @@ export {
 } from './fts.js';
 export {
   MetadataStore,
+  type ChunkRow,
   type FileRow,
   type IndexRunRow,
   type RepoRow,

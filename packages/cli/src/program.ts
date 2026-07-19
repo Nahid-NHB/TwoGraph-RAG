@@ -1,9 +1,9 @@
 import { Command } from 'commander';
 import { runInit } from './commands/init.js';
+import { runIndex } from './commands/index-repo.js';
+import { runSearch } from './commands/search.js';
 
 const NOT_IMPLEMENTED: ReadonlyArray<{ name: string; args: string; description: string }> = [
-  { name: 'index', args: '[path]', description: 'Index a repository into graph + vector stores' },
-  { name: 'search', args: '<query>', description: 'Hybrid/semantic/keyword code search' },
   { name: 'query', args: '<question>', description: 'Ask a natural-language question (RAG)' },
   { name: 'graph', args: '<template>', description: 'Run a graph query template' },
   { name: 'deadcode', args: '', description: 'Report unreachable code from entry points' },
@@ -33,6 +33,29 @@ export function buildProgram(io: ProgramIo = { out: console.log, err: console.er
       const path = runInit(process.cwd(), opts);
       io.out(`Created ${path}`);
     });
+
+  program
+    .command('index [path]')
+    .description('Index a repository into graph + vector stores')
+    .option('--rebuild', 'wipe and rebuild the index from scratch')
+    .action(async (path: string | undefined, opts: { rebuild?: boolean }) => {
+      await runIndex(process.cwd(), path, opts, io);
+    });
+
+  program
+    .command('search <query>')
+    .description('Hybrid/semantic/keyword code search')
+    .option('--mode <mode>', 'search mode: semantic, keyword, or hybrid', 'semantic')
+    .option('-k <n>', 'number of results', '10')
+    .option('--kind <kind>', 'filter by symbol kind')
+    .option('--path <prefix>', 'filter by path prefix')
+    .action(
+      async (query: string, opts: { mode?: string; k?: string; kind?: string; path?: string }) => {
+        // --json is declared globally (shared with other commands), not per-command.
+        const json = Boolean(program.opts()['json']);
+        await runSearch(process.cwd(), query, { ...opts, json }, io);
+      },
+    );
 
   for (const cmd of NOT_IMPLEMENTED) {
     const c = program.command(`${cmd.name} ${cmd.args}`.trim()).description(cmd.description);
