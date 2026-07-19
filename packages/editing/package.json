@@ -26,6 +26,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@twograph/parser": "workspace:*"
+    "@twograph/indexer": "workspace:*",
+    "@twograph/parser": "workspace:*",
+    "@twograph/vector": "workspace:*"
   }
 }

@@ -94,6 +94,16 @@ describe('typed graph queries', () => {
     expect(sub.edges).toContainEqual(expect.objectContaining({ type: 'USES_COMPONENT' }));
   });
 
+  it('dependentFiles follows both IMPORTS and EXPORTS (barrel re-export) edges', async () => {
+    const dependents = await queries.dependentFiles(REPO, 'auth/jwt.ts');
+    expect(dependents).toEqual(expect.arrayContaining(['api/handlers.ts', 'auth/authService.ts']));
+
+    // utils/index.ts re-exports everything from utils/format.ts via `export *
+    // from` — a barrel edge, not an import — so it must show up too.
+    const utilsDependents = await queries.dependentFiles(REPO, 'utils/format.ts');
+    expect(utilsDependents).toContain('utils/index.ts');
+  });
+
   it('filePaths lists the repository files', async () => {
     const paths = await queries.filePaths(REPO);
     expect(paths).toContain('auth/jwt.ts');

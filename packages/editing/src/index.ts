@@ -18,3 +18,8 @@ export {
   type ProposeEditDeps,
   type ApproveEditDeps,
 } from './approval.js';
+export {
+  renameSymbol,
+  renameSymbolParamsSchema,
+  type RenameSymbolParams,
+} from './operations/rename-symbol.js';

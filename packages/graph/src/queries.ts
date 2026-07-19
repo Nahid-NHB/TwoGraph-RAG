@@ -173,11 +173,16 @@ export class GraphQueries {
     return { nodes: [...nodes.values()], edges };
   }
 
-  /** Paths of files that IMPORT the given file — used to scope AST edit projects (issue #48). */
+  /**
+   * Paths of files that IMPORT or re-export (`export ... from`) the given
+   * file — used to scope AST edit projects (issue #48, extended #50 to also
+   * follow EXPORTS so barrel files load into the same scoped project as
+   * their re-exported target).
+   */
   async dependentFiles(repo: string, path: string): Promise<string[]> {
     const rows = await this.client.run(
-      `MATCH (d:File {repoId: $repo})-[:IMPORTS]->(:File {id: $fileId})
-       RETURN d.path AS path`,
+      `MATCH (d:File {repoId: $repo})-[:IMPORTS|EXPORTS]->(:File {id: $fileId})
+       RETURN DISTINCT d.path AS path`,
       { repo, fileId: `${repo}:${path}` },
     );
     return rows.map((r) => r.get('path') as string);
