@@ -21,6 +21,12 @@
     "@twograph/core": "workspace:*",
     "@twograph/graph": "workspace:*",
     "@twograph/llm": "workspace:*",
+    "@twograph/retrieval": "workspace:*",
+    "@twograph/store": "workspace:*",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@twograph/indexer": "workspace:*",
+    "@twograph/vector": "workspace:*"
   }
 }

@@ -8,6 +8,8 @@
   "references": [
     { "path": "../core/tsconfig.build.json" },
     { "path": "../graph/tsconfig.build.json" },
-    { "path": "../llm/tsconfig.build.json" }
+    { "path": "../llm/tsconfig.build.json" },
+    { "path": "../store/tsconfig.build.json" },
+    { "path": "../retrieval/tsconfig.build.json" }
   ]
 }

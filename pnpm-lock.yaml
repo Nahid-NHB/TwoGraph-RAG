@@ -200,9 +200,22 @@ importers:
       '@twograph/llm':
         specifier: workspace:*
         version: link:../llm
+      '@twograph/retrieval':
+        specifier: workspace:*
+        version: link:../retrieval
+      '@twograph/store':
+        specifier: workspace:*
+        version: link:../store
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+    devDependencies:
+      '@twograph/indexer':
+        specifier: workspace:*
+        version: link:../indexer
+      '@twograph/vector':
+        specifier: workspace:*
+        version: link:../vector
 
   packages/retrieval:
     dependencies:
