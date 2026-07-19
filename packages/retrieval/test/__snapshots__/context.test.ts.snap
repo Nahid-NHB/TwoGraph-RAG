@@ -1,0 +1,32 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`assembleContext > produces the expected block layout (snapshot) 1`] = `
+[
+  {
+    "citationId": "S1",
+    "endLine": 12,
+    "path": "auth/jwt.ts",
+    "startLine": 10,
+    "symbolId": "r:auth/jwt.ts#verifyToken",
+    "text": "[S1] auth/jwt.ts:10-12
+signature: function verifyToken(token: string): TokenPayload
+doc: Verifies a JWT-shaped token and returns its payload.
+
+export function verifyToken(token: string): TokenPayload {
+  return decodeToken(token);
+}
+
+Callers:
+- isAuthorized (api/handlers.ts): function isAuthorized(header: string): boolean
+
+Callees:
+- decodeToken (auth/jwt.ts): function decodeToken(token: string): TokenPayload
+- validateJWT (auth/jwt.ts): function validateJWT(token: string): boolean
+
+Related files (auth/jwt.ts):
+- siblings: auth/types.ts
+- imports: auth/types.ts",
+    "tokens": 144,
+  },
+]
+`;
