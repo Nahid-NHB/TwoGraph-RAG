@@ -1,0 +1,26 @@
+{
+  "name": "@twograph/rag",
+  "version": "0.0.0",
+  "description": "Multi-query generation, RAG pipeline, grounding, and chat sessions",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@twograph/core": "workspace:*",
+    "@twograph/graph": "workspace:*",
+    "@twograph/llm": "workspace:*",
+    "zod": "^4.4.3"
+  }
+}

@@ -189,6 +189,21 @@ importers:
         specifier: ^0.25.10
         version: 0.25.10
 
+  packages/rag:
+    dependencies:
+      '@twograph/core':
+        specifier: workspace:*
+        version: link:../core
+      '@twograph/graph':
+        specifier: workspace:*
+        version: link:../graph
+      '@twograph/llm':
+        specifier: workspace:*
+        version: link:../llm
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
   packages/retrieval:
     dependencies:
       '@huggingface/transformers':
