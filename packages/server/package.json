@@ -1,0 +1,32 @@
+{
+  "name": "@twograph/server",
+  "version": "0.0.0",
+  "description": "Fastify REST API: repos, indexing, search, symbols, graph",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@fastify/swagger": "^9.8.1",
+    "@twograph/core": "workspace:*",
+    "@twograph/graph": "workspace:*",
+    "@twograph/indexer": "workspace:*",
+    "@twograph/retrieval": "workspace:*",
+    "@twograph/store": "workspace:*",
+    "@twograph/vector": "workspace:*",
+    "fastify": "^5.10.0",
+    "fastify-type-provider-zod": "^7.0.0",
+    "zod": "^4.4.3"
+  }
+}

@@ -10,6 +10,7 @@
     { "path": "packages/indexer/tsconfig.build.json" },
     { "path": "packages/retrieval/tsconfig.build.json" },
     { "path": "packages/llm/tsconfig.build.json" },
-    { "path": "packages/rag/tsconfig.build.json" }
+    { "path": "packages/rag/tsconfig.build.json" },
+    { "path": "packages/server/tsconfig.build.json" }
   ]
 }
