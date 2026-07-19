@@ -1,0 +1,31 @@
+{
+  "name": "@twograph/indexer",
+  "version": "0.0.0",
+  "description": "End-to-end indexing pipeline: discover, diff, parse, graph, chunk, embed",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@twograph/core": "workspace:*",
+    "@twograph/graph": "workspace:*",
+    "@twograph/parser": "workspace:*",
+    "@twograph/store": "workspace:*",
+    "@twograph/vector": "workspace:*",
+    "picomatch": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/picomatch": "^4.0.2"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@twograph/llm",
+  "version": "0.0.0",
+  "description": "Provider-agnostic LLM interface with OpenAI, Anthropic, and mock implementations",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.3",
+    "@twograph/core": "workspace:*",
+    "openai": "^6.48.0"
+  }
+}

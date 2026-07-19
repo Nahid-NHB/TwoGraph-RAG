@@ -1,0 +1,23 @@
+{
+  "name": "@twograph/store",
+  "version": "0.0.0",
+  "description": "SQLite metadata store (files, symbols, chunks, edits, chat) with FTS5 BM25",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@twograph/core": "workspace:*"
+  }
+}

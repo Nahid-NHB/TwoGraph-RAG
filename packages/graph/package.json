@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "@twograph/core": "workspace:*",
-    "neo4j-driver": "^6.0.1"
+    "neo4j-driver": "^6.0.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@twograph/parser": "workspace:*"

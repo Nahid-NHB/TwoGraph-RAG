@@ -330,6 +330,8 @@ export class GraphWriter {
       if (!ref.resolvedId || !ref.from) continue;
       const from = byQualified.get(ref.from);
       if (!from || from.id === ref.resolvedId) continue;
+      // Route→handler links become HANDLES edges (writeReactEdges), not CALLS.
+      if (from.kind === 'route') continue;
       if (ref.kind === 'call') {
         const key = `${from.id}|${ref.resolvedId}`;
         const existing = calls.get(key);
@@ -373,6 +375,163 @@ export class GraphWriter {
         { rows: reads },
       );
     }
+  }
+
+  /**
+   * React-specific edges (issue #26): USES_COMPONENT (JSX usage with counts),
+   * USES_HOOK, PROVIDES_CONTEXT (<X.Provider> renders), CONSUMES_CONTEXT
+   * (useContext reads), and HANDLES (handler → Route).
+   */
+  async writeReactEdges(parsed: ParsedFile): Promise<void> {
+    const byQualified = new Map(parsed.symbols.map((s) => [s.qualifiedName, s]));
+    const routeIds = new Map(
+      parsed.symbols.filter((s) => s.kind === 'route').map((s) => [s.qualifiedName, s.id]),
+    );
+
+    const usesComponent: { a: string; b: string; count: number }[] = [];
+    const providesContext: { a: string; b: string }[] = [];
+    const usesHook: { a: string; b: string; line: number }[] = [];
+    const consumesContext: { a: string; b: string }[] = [];
+    const handles: { handler: string; route: string }[] = [];
+
+    for (const ref of parsed.references) {
+      if (!ref.resolvedId || !ref.from) continue;
+      const routeId = routeIds.get(ref.from);
+      if (routeId) {
+        handles.push({ handler: ref.resolvedId, route: routeId });
+        continue;
+      }
+      const from = byQualified.get(ref.from);
+      if (!from) continue;
+      if (ref.kind === 'jsx') {
+        if (ref.name.endsWith('.Provider')) {
+          providesContext.push({ a: from.id, b: ref.resolvedId });
+        } else {
+          const jsxUsage = from.meta['jsxUsage'] as Record<string, number> | undefined;
+          usesComponent.push({ a: from.id, b: ref.resolvedId, count: jsxUsage?.[ref.name] ?? 1 });
+        }
+      } else if (ref.kind === 'hook') {
+        usesHook.push({ a: from.id, b: ref.resolvedId, line: ref.line });
+      } else if (ref.kind === 'read') {
+        consumesContext.push({ a: from.id, b: ref.resolvedId });
+      }
+    }
+
+    if (usesComponent.length > 0) {
+      await this.client.run(
+        `UNWIND $rows AS row
+         MATCH (a {id: row.a}), (b:Component {id: row.b})
+         MERGE (a)-[r:USES_COMPONENT]->(b) SET r.count = row.count`,
+        { rows: usesComponent },
+      );
+    }
+    if (providesContext.length > 0) {
+      await this.client.run(
+        `UNWIND $rows AS row
+         MATCH (a {id: row.a}), (b:Context {id: row.b})
+         MERGE (a)-[:PROVIDES_CONTEXT]->(b)`,
+        { rows: providesContext },
+      );
+    }
+    if (usesHook.length > 0) {
+      await this.client.run(
+        `UNWIND $rows AS row
+         MATCH (a {id: row.a}), (b:Hook {id: row.b})
+         MERGE (a)-[r:USES_HOOK]->(b) SET r.line = row.line`,
+        { rows: usesHook },
+      );
+    }
+    if (consumesContext.length > 0) {
+      await this.client.run(
+        `UNWIND $rows AS row
+         MATCH (a {id: row.a}), (b:Context {id: row.b})
+         MERGE (a)-[:CONSUMES_CONTEXT]->(b)`,
+        { rows: consumesContext },
+      );
+    }
+    if (handles.length > 0) {
+      await this.client.run(
+        `UNWIND $rows AS row
+         MATCH (h {id: row.handler}), (r:Route {id: row.route})
+         MERGE (h)-[:HANDLES]->(r)`,
+        { rows: handles },
+      );
+    }
+  }
+
+  /**
+   * Incremental update support (issue #27, docs/05 §3): removes a file's owned
+   * subgraph so it can be rewritten. Route nodes are permanent — they keep
+   * their identity/properties; only their inbound HANDLES edges are cleared
+   * for re-pointing. The File node survives (or is deleted for removed files).
+   */
+  async removeFileSubgraph(
+    repo: string,
+    path: string,
+    options: { deleteFile?: boolean } = {},
+  ): Promise<void> {
+    const fileId = `${repo}:${path}`;
+    // Non-route symbols owned by the file: fully removed (incoming edges too).
+    await this.client.run(
+      `MATCH (f:File {id: $fileId})-[:CONTAINS]->(s)
+       WHERE NOT s:Route
+       DETACH DELETE s`,
+      { fileId },
+    );
+    // Routes stay; clear inbound HANDLES so handlers re-point on rewrite.
+    await this.client.run(
+      `MATCH (f:File {id: $fileId})-[:CONTAINS]->(r:Route)<-[h:HANDLES]-()
+       DELETE h`,
+      { fileId },
+    );
+    // The file's own structural edges are rewritten from scratch.
+    await this.client.run(
+      `MATCH (f:File {id: $fileId})-[e:IMPORTS|EXPORTS|DEFINES|DECLARES]->()
+       DELETE e`,
+      { fileId },
+    );
+    if (options.deleteFile) {
+      await this.client.run('MATCH (f:File {id: $fileId}) DETACH DELETE f', { fileId });
+    }
+  }
+
+  /** All write passes for one file, in order. */
+  async writeFileComplete(parsed: ParsedFile, resolveModule: ModuleResolver): Promise<void> {
+    await this.writeParsedFile(parsed);
+    await this.writeStructuralEdges(parsed, resolveModule);
+    await this.writeBehavioralEdges(parsed);
+    await this.writeReactEdges(parsed);
+  }
+
+  /**
+   * Re-index one changed file: remove its subgraph, rewrite it, and re-run
+   * edge passes for dependent files (whose edges into the removed symbols
+   * were destroyed). Dependents are supplied by the caller (indexer keeps
+   * parse results); returns the dependent paths it re-pointed.
+   */
+  async updateFile(
+    parsed: ParsedFile,
+    resolveModule: ModuleResolver,
+    dependents: ParsedFile[],
+  ): Promise<string[]> {
+    await this.removeFileSubgraph(parsed.repo, parsed.path);
+    await this.writeFileComplete(parsed, resolveModule);
+    for (const dep of dependents) {
+      await this.writeStructuralEdges(dep, resolveModule);
+      await this.writeBehavioralEdges(dep);
+      await this.writeReactEdges(dep);
+    }
+    return dependents.map((d) => d.path);
+  }
+
+  /** Paths of files that IMPORT the given file (need edge re-pointing). */
+  async dependentFiles(repo: string, path: string): Promise<string[]> {
+    const rows = await this.client.run(
+      `MATCH (d:File {repoId: $repo})-[:IMPORTS]->(:File {id: $fileId})
+       RETURN d.path AS path`,
+      { repo, fileId: `${repo}:${path}` },
+    );
+    return rows.map((r) => r.get('path') as string);
   }
 
   private async edgeBatch(
