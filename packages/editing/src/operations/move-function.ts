@@ -11,6 +11,7 @@ import {
 import { z } from 'zod';
 import type { EditContext, EditOperation, EditOperationResult } from '../registry.js';
 import { rejectIfOverloaded, resolveTopLevelFunction } from './function-lookup.js';
+import { addNamedImport } from './imports.js';
 
 export const moveFunctionParamsSchema = z.object({
   symbolId: z.string(),
@@ -83,25 +84,6 @@ function findExternalDependencies(
     }
   }
   return deps;
-}
-
-/** Adds a named import to `targetFile`, merging into an existing import from the same module. */
-function addNamedImport(
-  targetFile: SourceFile,
-  moduleSpecifier: string,
-  name: string,
-  isTypeOnly = false,
-): void {
-  const existing = targetFile
-    .getImportDeclarations()
-    .find((d) => d.getModuleSpecifierValue() === moduleSpecifier && d.isTypeOnly() === isTypeOnly);
-  if (existing) {
-    if (!existing.getNamedImports().some((ni) => ni.getName() === name)) {
-      existing.addNamedImport(name);
-    }
-    return;
-  }
-  targetFile.addImportDeclaration({ moduleSpecifier, namedImports: [name], isTypeOnly });
 }
 
 /** Resolves each dependency the moved statement needs, wiring an equivalent import into the target file. */

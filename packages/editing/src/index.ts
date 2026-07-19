@@ -43,3 +43,9 @@ export {
   extractFunctionParamsSchema,
   type ExtractFunctionParams,
 } from './operations/extract-function.js';
+export {
+  updateImports,
+  updateImportsParamsSchema,
+  type UpdateImportsParams,
+} from './operations/update-imports.js';
+export { addNamedImport } from './operations/imports.js';
