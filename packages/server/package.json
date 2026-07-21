@@ -20,6 +20,7 @@
   "dependencies": {
     "@fastify/swagger": "^9.8.1",
     "@twograph/core": "workspace:*",
+    "@twograph/editing": "workspace:*",
     "@twograph/graph": "workspace:*",
     "@twograph/indexer": "workspace:*",
     "@twograph/llm": "workspace:*",

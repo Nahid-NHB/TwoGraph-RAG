@@ -11,6 +11,7 @@ import { errorHandler } from './errors.js';
 import { RepoRegistry } from './registry.js';
 import { registerChatRoutes } from './routes/chat.js';
 import { registerComponentRoutes } from './routes/components.js';
+import { registerEditRoutes } from './routes/edits.js';
 import { registerFileRoutes } from './routes/files.js';
 import { registerGraphRoutes } from './routes/graph.js';
 import { registerIndexRoutes } from './routes/index-runs.js';
@@ -53,6 +54,7 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
   registerGraphRoutes(app, registry);
   registerFileRoutes(app, registry);
   registerChatRoutes(app, registry);
+  registerEditRoutes(app, registry);
 
   app.get('/openapi.json', { schema: { hide: true } }, () => app.swagger());
 
