@@ -143,3 +143,25 @@ export function useSymbolDetail(repoId: string | undefined, symbolId: string | u
     enabled: Boolean(repoId) && Boolean(symbolId),
   });
 }
+
+export function useSubgraph(
+  repoId: string | undefined,
+  root: string | undefined,
+  depth: number,
+  edges: string[],
+) {
+  return useQuery({
+    queryKey: ['graph', 'subgraph', repoId, root, depth, edges],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/v1/repos/{repo}/graph/subgraph', {
+        params: {
+          path: { repo: repoId! },
+          query: { root: root!, depth, ...(edges.length > 0 ? { edges: edges.join(',') } : {}) },
+        },
+      });
+      if (error) throw apiError(error);
+      return data;
+    },
+    enabled: Boolean(repoId) && Boolean(root),
+  });
+}
