@@ -39,6 +39,7 @@ const editSummarySchema = z.object({
   resolvedAt: z.string().nullable(),
   diff: z.string(),
   affectedFiles: z.array(z.string()),
+  params: z.record(z.string(), z.unknown()),
 });
 
 const proposeBodySchema = z.object({
@@ -57,6 +58,7 @@ function toSummary(row: EditRow): z.infer<typeof editSummarySchema> {
     resolvedAt: row.resolved_at,
     diff: row.diff,
     affectedFiles: Object.keys(fileHashes),
+    params: JSON.parse(row.params_json) as Record<string, unknown>,
   };
 }
 

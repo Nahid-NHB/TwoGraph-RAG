@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { RootLayout } from './routes/root-layout.js';
 import { RepoGate } from './routes/repo-gate.js';
 import { ChatPage } from './routes/chat.js';
+import { EditsPage } from './routes/edits.js';
 import { Explorer } from './routes/explorer.js';
 import { GraphPage } from './routes/graph.js';
 import { Placeholder } from './routes/placeholder.js';
@@ -18,7 +19,7 @@ export default function App() {
         <Route path="chat" element={<ChatPage />} />
         <Route path="chat/:sessionId" element={<ChatPage />} />
         <Route path="graph" element={<GraphPage />} />
-        <Route path="edits" element={<Placeholder title="Edits" />} />
+        <Route path="edits" element={<EditsPage />} />
         <Route path="deps" element={<Placeholder title="Dependencies" />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

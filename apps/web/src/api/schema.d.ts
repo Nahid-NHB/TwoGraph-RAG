@@ -893,6 +893,9 @@ export interface paths {
                             resolvedAt: string | null;
                             diff: string;
                             affectedFiles: string[];
+                            params: {
+                                [key: string]: unknown;
+                            };
                         }[];
                     };
                 };
@@ -935,6 +938,9 @@ export interface paths {
                             resolvedAt: string | null;
                             diff: string;
                             affectedFiles: string[];
+                            params: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -981,6 +987,9 @@ export interface paths {
                             resolvedAt: string | null;
                             diff: string;
                             affectedFiles: string[];
+                            params: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1031,6 +1040,9 @@ export interface paths {
                             resolvedAt: string | null;
                             diff: string;
                             affectedFiles: string[];
+                            params: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1079,6 +1091,9 @@ export interface paths {
                             resolvedAt: string | null;
                             diff: string;
                             affectedFiles: string[];
+                            params: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1127,6 +1142,9 @@ export interface paths {
                             resolvedAt: string | null;
                             diff: string;
                             affectedFiles: string[];
+                            params: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };

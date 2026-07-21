@@ -14,6 +14,7 @@ interface EditSummary {
   resolvedAt: string | null;
   diff: string;
   affectedFiles: string[];
+  params: Record<string, unknown>;
 }
 
 interface ProblemDetails {
@@ -87,6 +88,7 @@ describe('@twograph/server edit routes', () => {
     expect(proposed.diff).toContain('-export function verifyToken(');
     expect(proposed.diff).toContain('+export function verifyJwt(');
     expect(proposed.affectedFiles).toContain('auth/jwt.ts');
+    expect(proposed.params).toEqual({ symbolId, newName: 'verifyJwt' });
 
     const list = await app.inject({ method: 'GET', url: `/v1/repos/${repoId}/edits` });
     expect(list.statusCode).toBe(200);

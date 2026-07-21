@@ -144,6 +144,104 @@ export function useSymbolDetail(repoId: string | undefined, symbolId: string | u
   });
 }
 
+export function useEdits(repoId: string | undefined) {
+  return useQuery({
+    queryKey: ['edits', repoId],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/v1/repos/{repo}/edits', {
+        params: { path: { repo: repoId! } },
+      });
+      if (error) throw apiError(error);
+      return [...data].reverse(); // newest first
+    },
+    enabled: Boolean(repoId),
+  });
+}
+
+export function useEdit(repoId: string | undefined, editId: string | undefined) {
+  return useQuery({
+    queryKey: ['edits', repoId, editId],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/v1/repos/{repo}/edits/{id}', {
+        params: { path: { repo: repoId!, id: editId! } },
+      });
+      if (error) throw apiError(error);
+      return data;
+    },
+    enabled: Boolean(repoId) && Boolean(editId),
+  });
+}
+
+export function useProposeEdit(repoId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { operation: string; params: Record<string, unknown> }) => {
+      const { data, error } = await api.POST('/v1/repos/{repo}/edits', {
+        params: { path: { repo: repoId! } },
+        body: input,
+      });
+      if (error) throw apiError(error);
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['edits', repoId] });
+    },
+  });
+}
+
+function useEditActionInvalidation(repoId: string | undefined) {
+  const queryClient = useQueryClient();
+  return async (editId: string) => {
+    // Runs on both success and failure — a failed approve still flips the
+    // edit's status server-side (e.g. to 'expired' on hash drift), so the
+    // detail view must refetch either way.
+    await queryClient.invalidateQueries({ queryKey: ['edits', repoId] });
+    await queryClient.invalidateQueries({ queryKey: ['edits', repoId, editId] });
+  };
+}
+
+export function useApproveEdit(repoId: string | undefined) {
+  const invalidate = useEditActionInvalidation(repoId);
+  return useMutation({
+    mutationFn: async (editId: string) => {
+      const { data, error } = await api.POST('/v1/repos/{repo}/edits/{id}/approve', {
+        params: { path: { repo: repoId!, id: editId } },
+      });
+      if (error) throw apiError(error);
+      return data;
+    },
+    onSettled: (_data, _error, editId) => invalidate(editId),
+  });
+}
+
+export function useRejectEdit(repoId: string | undefined) {
+  const invalidate = useEditActionInvalidation(repoId);
+  return useMutation({
+    mutationFn: async (editId: string) => {
+      const { data, error } = await api.POST('/v1/repos/{repo}/edits/{id}/reject', {
+        params: { path: { repo: repoId!, id: editId } },
+      });
+      if (error) throw apiError(error);
+      return data;
+    },
+    onSettled: (_data, _error, editId) => invalidate(editId),
+  });
+}
+
+export function useRevertEdit(repoId: string | undefined) {
+  const invalidate = useEditActionInvalidation(repoId);
+  return useMutation({
+    mutationFn: async (editId: string) => {
+      const { data, error } = await api.POST('/v1/repos/{repo}/edits/{id}/revert', {
+        params: { path: { repo: repoId!, id: editId } },
+      });
+      if (error) throw apiError(error);
+      return data;
+    },
+    onSettled: (_data, _error, editId) => invalidate(editId),
+  });
+}
+
 export function useSubgraph(
   repoId: string | undefined,
   root: string | undefined,
