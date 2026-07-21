@@ -59,6 +59,32 @@ export function useFileSymbols(repoId: string | undefined, path: string | undefi
   });
 }
 
+export interface SearchFilters {
+  kinds?: string[];
+  pathPrefix?: string;
+  language?: string;
+}
+
+export function useSearch(
+  repoId: string | undefined,
+  query: string,
+  mode: 'hybrid' | 'semantic' | 'keyword',
+  filters: SearchFilters,
+) {
+  return useQuery({
+    queryKey: ['search', repoId, query, mode, filters],
+    queryFn: async () => {
+      const { data, error } = await api.POST('/v1/repos/{repo}/search', {
+        params: { path: { repo: repoId! } },
+        body: { query, mode, k: 20, filters },
+      });
+      if (error) throw apiError(error);
+      return data.hits;
+    },
+    enabled: Boolean(repoId) && query.trim().length > 0,
+  });
+}
+
 export function useSymbolDetail(repoId: string | undefined, symbolId: string | undefined) {
   return useQuery({
     queryKey: ['symbols', repoId, symbolId],
