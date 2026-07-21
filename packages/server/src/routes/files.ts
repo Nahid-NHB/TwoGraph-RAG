@@ -1,7 +1,18 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { formatFileId } from '@twograph/core';
 import type { RepoRegistry } from '../registry.js';
+
+const fileSymbolSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  kind: z.string(),
+  signature: z.string().nullable(),
+  startLine: z.number(),
+  endLine: z.number(),
+  exported: z.boolean(),
+});
 
 export interface FileTreeNode {
   name: string;
@@ -75,6 +86,31 @@ export function registerFileRoutes(app: FastifyInstance, registry: RepoRegistry)
       const repo = registry.require(request.params.repo);
       const paths = await repo.graphQueries.filePaths(repo.id);
       return { tree: buildFileTree(paths) };
+    },
+  );
+
+  server.get(
+    '/v1/repos/:repo/files/symbols',
+    {
+      schema: {
+        params: z.object({ repo: z.string() }),
+        querystring: z.object({ path: z.string().min(1) }),
+        response: { 200: z.object({ symbols: z.array(fileSymbolSchema) }) },
+      },
+    },
+    (request) => {
+      const repo = registry.require(request.params.repo);
+      const fileId = formatFileId({ repo: repo.id, path: request.query.path });
+      const symbols = repo.store.symbolsByFile(fileId).map((s) => ({
+        id: s.id,
+        name: s.name,
+        kind: s.kind,
+        signature: s.signature,
+        startLine: s.start_line,
+        endLine: s.end_line,
+        exported: s.exported !== 0,
+      }));
+      return { symbols };
     },
   );
 }

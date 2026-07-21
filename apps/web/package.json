@@ -12,7 +12,9 @@
     "generate-api": "node scripts/generate-openapi.mjs && openapi-typescript openapi.json -o src/api/schema.d.ts"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
     "@tanstack/react-query": "^5.62.7",
+    "@tanstack/react-virtual": "^3.11.2",
     "lucide-react": "^0.469.0",
     "openapi-fetch": "^0.13.4",
     "react": "^19.0.0",

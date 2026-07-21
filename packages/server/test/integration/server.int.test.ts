@@ -282,6 +282,18 @@ describe('@twograph/server routes', () => {
     expect(tree.some((n) => n.name === 'auth')).toBe(true);
   });
 
+  it('returns the symbol outline for a file', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/repos/${repoId}/files/symbols?path=${encodeURIComponent('auth/jwt.ts')}`,
+    });
+    expect(res.statusCode).toBe(200);
+    const { symbols } = json<{
+      symbols: { name: string; kind: string; exported: boolean; startLine: number }[];
+    }>(res);
+    expect(symbols.some((s) => s.name === 'verifyToken' && s.exported)).toBe(true);
+  });
+
   it('returns a 404 problem+json for an unregistered repo', async () => {
     const res = await app.inject({ method: 'GET', url: '/v1/repos/not-a-real-repo-id' });
     expect(res.statusCode).toBe(404);

@@ -625,6 +625,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/repos/{repo}/files/symbols": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    path: string;
+                };
+                header?: never;
+                path: {
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            symbols: {
+                                id: string;
+                                name: string;
+                                kind: string;
+                                signature: string | null;
+                                startLine: number;
+                                endLine: number;
+                                exported: boolean;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/repos/{repo}/chat/sessions": {
         parameters: {
             query?: never;
