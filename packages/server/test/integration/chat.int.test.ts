@@ -199,6 +199,20 @@ describe('@twograph/server chat routes', () => {
     expect(body.groundedContext).toBe(true);
   });
 
+  it('lists every session created for the repo', async () => {
+    const sessionRes = await app.inject({
+      method: 'POST',
+      url: `/v1/repos/${repoId}/chat/sessions`,
+      payload: { title: 'listed session' },
+    });
+    const session = sessionRes.json<{ id: string }>();
+
+    const list = await app.inject({ method: 'GET', url: `/v1/repos/${repoId}/chat/sessions` });
+    expect(list.statusCode).toBe(200);
+    const sessions = list.json<{ id: string; title: string | null }[]>();
+    expect(sessions.some((s) => s.id === session.id && s.title === 'listed session')).toBe(true);
+  });
+
   it('returns a 404 problem+json for an unknown chat session', async () => {
     const res = await app.inject({
       method: 'GET',

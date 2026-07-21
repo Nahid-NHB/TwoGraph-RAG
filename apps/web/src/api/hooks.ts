@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { FileTreeNode } from '@twograph/server';
 import { api, apiError } from './client.js';
 
@@ -82,6 +82,51 @@ export function useSearch(
       return data.hits;
     },
     enabled: Boolean(repoId) && query.trim().length > 0,
+  });
+}
+
+export function useChatSessions(repoId: string | undefined) {
+  return useQuery({
+    queryKey: ['chat', 'sessions', repoId],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/v1/repos/{repo}/chat/sessions', {
+        params: { path: { repo: repoId! } },
+      });
+      if (error) throw apiError(error);
+      return [...data].reverse(); // newest first
+    },
+    enabled: Boolean(repoId),
+  });
+}
+
+export function useChatSession(repoId: string | undefined, sessionId: string | undefined) {
+  return useQuery({
+    queryKey: ['chat', 'session', repoId, sessionId],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/v1/repos/{repo}/chat/sessions/{sid}', {
+        params: { path: { repo: repoId!, sid: sessionId! } },
+      });
+      if (error) throw apiError(error);
+      return data;
+    },
+    enabled: Boolean(repoId) && Boolean(sessionId),
+  });
+}
+
+export function useCreateChatSession(repoId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (title?: string) => {
+      const { data, error } = await api.POST('/v1/repos/{repo}/chat/sessions', {
+        params: { path: { repo: repoId! } },
+        body: title ? { title } : {},
+      });
+      if (error) throw apiError(error);
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['chat', 'sessions', repoId] });
+    },
   });
 }
 

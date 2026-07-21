@@ -170,6 +170,20 @@ export function registerChatRoutes(app: FastifyInstance, registry: RepoRegistry)
   );
 
   server.get(
+    '/v1/repos/:repo/chat/sessions',
+    {
+      schema: {
+        params: z.object({ repo: z.string() }),
+        response: { 200: z.array(sessionSummarySchema) },
+      },
+    },
+    (request) => {
+      const repo = registry.require(request.params.repo);
+      return repo.store.listChatSessions(repo.id).map(toSessionSummary);
+    },
+  );
+
+  server.get(
     '/v1/repos/:repo/chat/sessions/:sid',
     {
       schema: {

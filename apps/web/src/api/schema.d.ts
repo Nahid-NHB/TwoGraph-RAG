@@ -681,7 +681,33 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            repoId: string;
+                            title: string | null;
+                            createdAt: string;
+                        }[];
+                    };
+                };
+            };
+        };
         put?: never;
         post: {
             parameters: {
