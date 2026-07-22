@@ -57,11 +57,14 @@ export class Indexer {
     this.writer = new GraphWriter(deps.graphClient);
   }
 
-  async run(options: { rebuild?: boolean; runId?: string } = {}): Promise<IndexRunResult> {
+  async run(
+    options: { rebuild?: boolean; runId?: string; kind?: 'full' | 'incremental' | 'watch' } = {},
+  ): Promise<IndexRunResult> {
     const started = performance.now();
     const { repo, store, fts, vectors } = this.deps;
     const runId =
-      options.runId ?? store.startIndexRun(repo.id, options.rebuild ? 'full' : 'incremental');
+      options.runId ??
+      store.startIndexRun(repo.id, options.kind ?? (options.rebuild ? 'full' : 'incremental'));
     const errors: IndexRunResult['errors'] = [];
 
     try {

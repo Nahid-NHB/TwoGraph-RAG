@@ -38,7 +38,8 @@ export function buildProgram(io: ProgramIo = { out: console.log, err: console.er
     .command('index [path]')
     .description('Index a repository into graph + vector stores')
     .option('--rebuild', 'wipe and rebuild the index from scratch')
-    .action(async (path: string | undefined, opts: { rebuild?: boolean }) => {
+    .option('--watch', 'keep watching for changes and reindex incrementally')
+    .action(async (path: string | undefined, opts: { rebuild?: boolean; watch?: boolean }) => {
       await runIndex(process.cwd(), path, opts, io);
     });
 

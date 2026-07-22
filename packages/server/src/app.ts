@@ -18,6 +18,7 @@ import { registerIndexRoutes } from './routes/index-runs.js';
 import { registerRepoRoutes } from './routes/repos.js';
 import { registerSearchRoutes } from './routes/search.js';
 import { registerSymbolRoutes } from './routes/symbols.js';
+import { registerWatchRoutes } from './routes/watch.js';
 
 export interface BuildServerOptions {
   registry?: RepoRegistry;
@@ -55,6 +56,7 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
   registerFileRoutes(app, registry);
   registerChatRoutes(app, registry);
   registerEditRoutes(app, registry);
+  registerWatchRoutes(app, registry);
 
   app.get('/openapi.json', { schema: { hide: true } }, () => app.swagger());
 

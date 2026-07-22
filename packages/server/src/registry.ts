@@ -1,6 +1,7 @@
 import { basename, join } from 'node:path';
 import { hashContent, loadConfig, NotFoundError, type TwoGraphConfig } from '@twograph/core';
 import { GraphClient, GraphQueries } from '@twograph/graph';
+import type { WatchHandle } from '@twograph/indexer';
 import { createLlmProvider, type LlmProvider } from '@twograph/llm';
 import { CrossEncoderReranker, type Reranker } from '@twograph/retrieval';
 import { FtsIndex, MetadataStore, openDatabase } from '@twograph/store';
@@ -25,6 +26,8 @@ export interface RegisteredRepo {
   llm: LlmProvider;
   /** Shared across requests — the cross-encoder loads its ONNX model once (issue #47). */
   reranker: Reranker;
+  /** Set while `POST /v1/repos/:repo/watch {enabled:true}` is active (issue #66). */
+  watchHandle?: WatchHandle | undefined;
 }
 
 /** Derived from the resolved root path, matching the CLI so both agree on repo identity. */
@@ -102,6 +105,9 @@ export class RepoRegistry {
   }
 
   async closeAll(): Promise<void> {
-    for (const repo of this.repos.values()) await repo.graphClient.close();
+    for (const repo of this.repos.values()) {
+      await repo.watchHandle?.close();
+      await repo.graphClient.close();
+    }
   }
 }
