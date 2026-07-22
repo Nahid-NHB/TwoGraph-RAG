@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { runDeadCode } from './commands/deadcode.js';
+import { runDeps } from './commands/deps.js';
 import { runInit } from './commands/init.js';
 import { runIndex } from './commands/index-repo.js';
 import { runMcp } from './commands/mcp.js';
@@ -87,6 +88,14 @@ export function buildProgram(io: ProgramIo = { out: console.log, err: console.er
     .action(async (opts: { entry?: string[]; tests?: boolean }) => {
       const json = Boolean(program.opts()['json']);
       await runDeadCode(process.cwd(), { ...opts, json }, io);
+    });
+
+  program
+    .command('deps')
+    .description('Parse manifests/configs into the graph and report unused/phantom dependencies')
+    .action(async () => {
+      const json = Boolean(program.opts()['json']);
+      await runDeps(process.cwd(), { json }, io);
     });
 
   for (const cmd of NOT_IMPLEMENTED) {

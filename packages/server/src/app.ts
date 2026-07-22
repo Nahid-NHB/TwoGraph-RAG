@@ -12,6 +12,7 @@ import { RepoRegistry } from './registry.js';
 import { registerChatRoutes } from './routes/chat.js';
 import { registerComponentRoutes } from './routes/components.js';
 import { registerDeadCodeRoutes } from './routes/deadcode.js';
+import { registerDepsRoutes } from './routes/deps.js';
 import { registerEditRoutes } from './routes/edits.js';
 import { registerFileRoutes } from './routes/files.js';
 import { registerGraphRoutes } from './routes/graph.js';
@@ -59,6 +60,7 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
   registerEditRoutes(app, registry);
   registerWatchRoutes(app, registry);
   registerDeadCodeRoutes(app, registry);
+  registerDepsRoutes(app, registry);
 
   app.get('/openapi.json', { schema: { hide: true } }, () => app.swagger());
 

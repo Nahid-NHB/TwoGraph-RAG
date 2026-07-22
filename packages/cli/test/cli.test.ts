@@ -34,6 +34,7 @@ describe('program surface', () => {
       'query',
       'graph',
       'deadcode',
+      'deps',
       'serve',
       'mcp',
     ]) {

@@ -1280,6 +1280,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/repos/{repo}/deps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            packages: {
+                                path: string;
+                                name: string;
+                                version: string | null;
+                            }[];
+                            dependencies: {
+                                name: string;
+                                depKind: string | null;
+                                declared: boolean;
+                                importCount: number;
+                            }[];
+                            configurations: {
+                                path: string;
+                                configKind: string;
+                            }[];
+                            mismatches: {
+                                name: string;
+                                /** @enum {string} */
+                                kind: "unused" | "phantom";
+                                depKind: string | null;
+                                importCount: number;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
