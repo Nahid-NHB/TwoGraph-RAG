@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { runDeadCode } from './commands/deadcode.js';
 import { runInit } from './commands/init.js';
 import { runIndex } from './commands/index-repo.js';
 import { runMcp } from './commands/mcp.js';
@@ -7,7 +8,6 @@ import { runSearch } from './commands/search.js';
 
 const NOT_IMPLEMENTED: ReadonlyArray<{ name: string; args: string; description: string }> = [
   { name: 'graph', args: '<template>', description: 'Run a graph query template' },
-  { name: 'deadcode', args: '', description: 'Report unreachable code from entry points' },
   { name: 'serve', args: '', description: 'Start the REST API server' },
 ];
 
@@ -74,6 +74,19 @@ export function buildProgram(io: ProgramIo = { out: console.log, err: console.er
     .option('--port <n>', 'HTTP port (default 4802)')
     .action(async (opts: { http?: boolean; port?: string }) => {
       await runMcp(opts, io);
+    });
+
+  program
+    .command('deadcode')
+    .description('Report unreachable code from entry points')
+    .option(
+      '--entry <path...>',
+      'entry-point file paths (repo-relative); defaults to auto-detected',
+    )
+    .option('--tests', 'also treat symbols defined in test files as entry points')
+    .action(async (opts: { entry?: string[]; tests?: boolean }) => {
+      const json = Boolean(program.opts()['json']);
+      await runDeadCode(process.cwd(), { ...opts, json }, io);
     });
 
   for (const cmd of NOT_IMPLEMENTED) {

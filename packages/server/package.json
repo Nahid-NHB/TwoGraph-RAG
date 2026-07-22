@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@fastify/swagger": "^9.8.1",
+    "@twograph/analysis": "workspace:*",
     "@twograph/core": "workspace:*",
     "@twograph/editing": "workspace:*",
     "@twograph/graph": "workspace:*",

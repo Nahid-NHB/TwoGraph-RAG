@@ -1224,6 +1224,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/repos/{repo}/deadcode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    entry?: string;
+                    tests?: boolean;
+                };
+                header?: never;
+                path: {
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            entryPoints: string[];
+                            symbols: {
+                                id: string;
+                                name: string;
+                                kind: string;
+                                path: string;
+                                /** @enum {string} */
+                                confidence: "dead" | "possibly-used";
+                            }[];
+                            files: {
+                                id: string;
+                                path: string;
+                                /** @enum {string} */
+                                confidence: "dead" | "possibly-used";
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {

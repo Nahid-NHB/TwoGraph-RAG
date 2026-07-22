@@ -45,7 +45,7 @@ describe('program surface', () => {
     const errs: string[] = [];
     const program = buildProgram({ out: () => {}, err: (l) => errs.push(l) });
     program.exitOverride();
-    await program.parseAsync(['node', 'twograph', 'deadcode']);
+    await program.parseAsync(['node', 'twograph', 'graph', 'who_calls']);
     expect(process.exitCode).toBe(2);
     process.exitCode = 0;
     expect(errs.join('\n')).toMatch(/not implemented/);

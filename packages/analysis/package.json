@@ -1,12 +1,9 @@
 {
-  "name": "@twograph/cli",
+  "name": "@twograph/analysis",
   "version": "0.0.0",
-  "description": "TwoGraph-RAG command line interface",
+  "description": "Static analysis: dead code, dependency graph, optimization advisor",
   "license": "MIT",
   "type": "module",
-  "bin": {
-    "twograph": "./dist/main.js"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -21,16 +18,13 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@twograph/analysis": "workspace:*",
     "@twograph/core": "workspace:*",
     "@twograph/graph": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
     "@twograph/indexer": "workspace:*",
-    "@twograph/llm": "workspace:*",
-    "@twograph/mcp": "workspace:*",
-    "@twograph/rag": "workspace:*",
-    "@twograph/retrieval": "workspace:*",
     "@twograph/store": "workspace:*",
-    "@twograph/vector": "workspace:*",
-    "commander": "^14.0.2"
+    "@twograph/vector": "workspace:*"
   }
 }

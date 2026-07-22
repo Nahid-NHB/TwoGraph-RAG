@@ -164,8 +164,33 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
+  packages/analysis:
+    dependencies:
+      '@twograph/core':
+        specifier: workspace:*
+        version: link:../core
+      '@twograph/graph':
+        specifier: workspace:*
+        version: link:../graph
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@twograph/indexer':
+        specifier: workspace:*
+        version: link:../indexer
+      '@twograph/store':
+        specifier: workspace:*
+        version: link:../store
+      '@twograph/vector':
+        specifier: workspace:*
+        version: link:../vector
+
   packages/cli:
     dependencies:
+      '@twograph/analysis':
+        specifier: workspace:*
+        version: link:../analysis
       '@twograph/core':
         specifier: workspace:*
         version: link:../core
@@ -389,6 +414,9 @@ importers:
       '@fastify/swagger':
         specifier: ^9.8.1
         version: 9.8.1
+      '@twograph/analysis':
+        specifier: workspace:*
+        version: link:../analysis
       '@twograph/core':
         specifier: workspace:*
         version: link:../core
