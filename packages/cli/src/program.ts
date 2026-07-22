@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { runInit } from './commands/init.js';
 import { runIndex } from './commands/index-repo.js';
+import { runMcp } from './commands/mcp.js';
 import { runQuery } from './commands/query.js';
 import { runSearch } from './commands/search.js';
 
@@ -8,7 +9,6 @@ const NOT_IMPLEMENTED: ReadonlyArray<{ name: string; args: string; description: 
   { name: 'graph', args: '<template>', description: 'Run a graph query template' },
   { name: 'deadcode', args: '', description: 'Report unreachable code from entry points' },
   { name: 'serve', args: '', description: 'Start the REST API server' },
-  { name: 'mcp', args: '', description: 'Start the MCP server (stdio)' },
 ];
 
 export interface ProgramIo {
@@ -64,6 +64,15 @@ export function buildProgram(io: ProgramIo = { out: console.log, err: console.er
       // --json is declared globally (shared with other commands), not per-command.
       const json = Boolean(program.opts()['json']);
       await runQuery(process.cwd(), question, { json }, io);
+    });
+
+  program
+    .command('mcp')
+    .description('Start the MCP server (stdio by default)')
+    .option('--http', 'serve streamable HTTP instead of stdio')
+    .option('--port <n>', 'HTTP port (default 4802)')
+    .action(async (opts: { http?: boolean; port?: string }) => {
+      await runMcp(opts, io);
     });
 
   for (const cmd of NOT_IMPLEMENTED) {

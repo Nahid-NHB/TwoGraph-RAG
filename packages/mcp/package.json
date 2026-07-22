@@ -1,11 +1,11 @@
 {
-  "name": "@twograph/cli",
+  "name": "@twograph/mcp",
   "version": "0.0.0",
-  "description": "TwoGraph-RAG command line interface",
+  "description": "TwoGraph-RAG MCP server (stdio + streamable HTTP)",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "twograph": "./dist/main.js"
+    "twograph-mcp": "./dist/main.js"
   },
   "exports": {
     ".": {
@@ -21,15 +21,14 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@twograph/core": "workspace:*",
+    "@twograph/editing": "workspace:*",
     "@twograph/graph": "workspace:*",
     "@twograph/indexer": "workspace:*",
     "@twograph/llm": "workspace:*",
-    "@twograph/mcp": "workspace:*",
-    "@twograph/rag": "workspace:*",
-    "@twograph/retrieval": "workspace:*",
     "@twograph/store": "workspace:*",
     "@twograph/vector": "workspace:*",
-    "commander": "^14.0.2"
+    "zod": "^4.4.3"
   }
 }

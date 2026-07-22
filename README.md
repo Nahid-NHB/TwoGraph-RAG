@@ -41,6 +41,32 @@ Question → Multi-Query → Hybrid Search → Graph Expansion → RRF → Reran
 | [Editing Pipeline](docs/08-editing-pipeline.md)     | AST editing with approval workflow        |
 | [Extension Points](docs/09-extension-points.md)     | Plugging in languages, stores, providers  |
 
+## MCP server
+
+`@twograph/mcp` exposes the index to any MCP-compatible agent (Claude Code, Claude Desktop, Cursor, …) via `repository_summary`, `semantic_search`, `query_graph`, `edit_function`, and `optimize_function`. Index a repo first (`twograph init && twograph index`), then run:
+
+```bash
+twograph mcp             # stdio (default) — for clients that spawn a child process
+twograph mcp --http      # streamable HTTP on :4802 (POST/GET/DELETE http://localhost:4802/mcp)
+```
+
+**Claude Code**: `claude mcp add twograph -- twograph mcp`
+
+**Claude Desktop** (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "twograph": {
+      "command": "twograph",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+Every tool takes a `repo` argument — the absolute path to an already-indexed repository root.
+
 ## Development
 
 ```bash
