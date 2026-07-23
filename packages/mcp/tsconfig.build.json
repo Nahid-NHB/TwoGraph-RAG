@@ -6,6 +6,7 @@
   },
   "include": ["src"],
   "references": [
+    { "path": "../analysis/tsconfig.build.json" },
     { "path": "../core/tsconfig.build.json" },
     { "path": "../graph/tsconfig.build.json" },
     { "path": "../store/tsconfig.build.json" },

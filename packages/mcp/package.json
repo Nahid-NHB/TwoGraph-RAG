@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@twograph/analysis": "workspace:*",
     "@twograph/core": "workspace:*",
     "@twograph/editing": "workspace:*",
     "@twograph/graph": "workspace:*",

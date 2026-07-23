@@ -347,6 +347,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(zod@4.4.3)
+      '@twograph/analysis':
+        specifier: workspace:*
+        version: link:../analysis
       '@twograph/core':
         specifier: workspace:*
         version: link:../core

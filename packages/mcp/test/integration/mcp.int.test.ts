@@ -68,6 +68,10 @@ describe('@twograph/mcp read + editing tools', () => {
         'repository_summary',
         'semantic_search',
         'query_graph',
+        'call_hierarchy',
+        'component_usage',
+        'dependency_graph',
+        'dead_code',
         'edit_function',
         'optimize_function',
       ]),
@@ -93,6 +97,55 @@ describe('@twograph/mcp read + editing tools', () => {
       params: {},
     });
     expect(Array.isArray(rows)).toBe(true);
+
+    await client.close();
+  }, 30_000);
+
+  it('returns structured, truncated results from the four analysis tools (issue #64)', async () => {
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const server = buildMcpServer();
+    await server.connect(serverTransport);
+    const client = new Client({ name: 'test-client', version: '0.0.0' });
+    await client.connect(clientTransport);
+
+    const callers = (await callToolJson(client, 'call_hierarchy', {
+      repo: root,
+      symbolId: `${ctx.repo.id}:auth/jwt.ts#verifyToken`,
+      direction: 'callers',
+      depth: 2,
+    })) as { items: { name: string }[]; totalCount: number; truncated: boolean };
+    expect(callers.items.length).toBeGreaterThan(0);
+    expect(callers.items.some((e) => e.name === 'isAuthorized')).toBe(true);
+    expect(callers.totalCount).toBe(callers.items.length);
+    expect(callers.truncated).toBe(false);
+
+    const truncatedCallers = (await callToolJson(client, 'call_hierarchy', {
+      repo: root,
+      symbolId: `${ctx.repo.id}:auth/jwt.ts#verifyToken`,
+      direction: 'callers',
+      depth: 2,
+      limit: 1,
+    })) as { items: unknown[]; totalCount: number; truncated: boolean };
+    expect(truncatedCallers.items).toHaveLength(1);
+    expect(truncatedCallers.totalCount).toBeGreaterThan(1);
+    expect(truncatedCallers.truncated).toBe(true);
+
+    const usage = (await callToolJson(client, 'component_usage', {
+      repo: root,
+      componentId: `${ctx.repo.id}:components/UserCard.tsx#UserCard`,
+      depth: 3,
+    })) as { items: { name: string }[] };
+    expect(usage.items.some((e) => e.name === 'UserList')).toBe(true);
+
+    const deps = (await callToolJson(client, 'dependency_graph', { repo: root })) as {
+      dependencies: { items: { name: string }[]; totalCount: number };
+    };
+    expect(deps.dependencies.items.some((d) => d.name === 'react')).toBe(true);
+
+    const dead = (await callToolJson(client, 'dead_code', { repo: root })) as {
+      symbols: { items: { name: string; kind: string }[] };
+    };
+    expect(dead.symbols.items.some((s) => s.name === 'Modal' && s.kind === 'Component')).toBe(true);
 
     await client.close();
   }, 30_000);
