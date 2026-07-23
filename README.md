@@ -76,7 +76,7 @@ pnpm test
 pnpm build && pnpm bench   # indexing + retrieval benchmarks vs scripts/bench/baseline.json
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Work is organized into 10 milestones; every change lands as one PR closing one issue.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Work is organized into 10 milestones; every change lands as one PR closing one issue. Please also read our [Code of Conduct](CODE_OF_CONDUCT.md); see [SECURITY.md](SECURITY.md) to report a vulnerability.
 
 ## License
 
