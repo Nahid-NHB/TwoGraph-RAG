@@ -67,6 +67,10 @@ function pipelineDeps(repo: RegisteredRepo): RagPipelineDeps {
         .split('\n')
         .slice(startLine - 1, endLine)
         .join('\n'),
+    // Per-repo, process-lifetime caches (issue #71) — safe to reuse across
+    // requests since every entry is keyed by the repo's current index version.
+    searchCache: repo.searchCache,
+    multiQueryCache: repo.multiQueryCache,
   };
 }
 
@@ -75,6 +79,7 @@ function pipelineOptions(repo: RegisteredRepo): RagPipelineOptions {
     repo: repo.id,
     rerankEnabled: repo.config.retrieval.rerank,
     tokenBudget: repo.config.retrieval.contextTokenBudget,
+    indexVersion: repo.store.repoGeneration(repo.id),
   };
 }
 
@@ -166,6 +171,20 @@ export function registerChatRoutes(app: FastifyInstance, registry: RepoRegistry)
       const session = repo.store.createChatSession(repo.id, request.body.title);
       void reply.code(201);
       return toSessionSummary(session);
+    },
+  );
+
+  server.get(
+    '/v1/repos/:repo/chat/sessions',
+    {
+      schema: {
+        params: z.object({ repo: z.string() }),
+        response: { 200: z.array(sessionSummarySchema) },
+      },
+    },
+    (request) => {
+      const repo = registry.require(request.params.repo);
+      return repo.store.listChatSessions(repo.id).map(toSessionSummary);
     },
   );
 

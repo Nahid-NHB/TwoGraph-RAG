@@ -1,0 +1,44 @@
+{
+  "name": "@twograph/mcp",
+  "version": "0.0.0",
+  "description": "TwoGraph-RAG MCP server (stdio + streamable HTTP)",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "twograph-mcp": "./dist/main.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@twograph/analysis": "workspace:*",
+    "@twograph/core": "workspace:*",
+    "@twograph/editing": "workspace:*",
+    "@twograph/graph": "workspace:*",
+    "@twograph/indexer": "workspace:*",
+    "@twograph/llm": "workspace:*",
+    "@twograph/store": "workspace:*",
+    "@twograph/vector": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nahid-NHB/TwoGraph-RAG.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://github.com/Nahid-NHB/TwoGraph-RAG/tree/main/packages/mcp#readme",
+  "bugs": {
+    "url": "https://github.com/Nahid-NHB/TwoGraph-RAG/issues"
+  }
+}

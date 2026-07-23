@@ -13,3 +13,4 @@ export {
   type IndexStage,
 } from './pipeline.js';
 export { semanticSearch, type SemanticHit, type SemanticSearchDeps } from './search.js';
+export { watchRepo, type WatchHandle, type WatchOptions } from './watcher.js';

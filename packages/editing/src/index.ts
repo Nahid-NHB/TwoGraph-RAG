@@ -49,3 +49,8 @@ export {
   type UpdateImportsParams,
 } from './operations/update-imports.js';
 export { addNamedImport } from './operations/imports.js';
+export {
+  applyPatch,
+  applyPatchParamsSchema,
+  type ApplyPatchParams,
+} from './operations/apply-patch.js';

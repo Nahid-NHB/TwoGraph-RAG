@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@fastify/swagger": "^9.8.1",
+    "@twograph/analysis": "workspace:*",
     "@twograph/core": "workspace:*",
     "@twograph/editing": "workspace:*",
     "@twograph/graph": "workspace:*",
@@ -31,5 +32,14 @@
     "fastify": "^5.10.0",
     "fastify-type-provider-zod": "^7.0.0",
     "zod": "^4.4.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nahid-NHB/TwoGraph-RAG.git",
+    "directory": "packages/server"
+  },
+  "homepage": "https://github.com/Nahid-NHB/TwoGraph-RAG/tree/main/packages/server#readme",
+  "bugs": {
+    "url": "https://github.com/Nahid-NHB/TwoGraph-RAG/issues"
   }
 }

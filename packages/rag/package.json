@@ -28,5 +28,14 @@
   "devDependencies": {
     "@twograph/indexer": "workspace:*",
     "@twograph/vector": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nahid-NHB/TwoGraph-RAG.git",
+    "directory": "packages/rag"
+  },
+  "homepage": "https://github.com/Nahid-NHB/TwoGraph-RAG/tree/main/packages/rag#readme",
+  "bugs": {
+    "url": "https://github.com/Nahid-NHB/TwoGraph-RAG/issues"
   }
 }

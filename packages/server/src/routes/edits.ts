@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { NotFoundError } from '@twograph/core';
 import {
   addParameter,
+  applyPatch,
   approveEdit,
   EditOperationRegistry,
   extractFunction,
@@ -19,14 +20,19 @@ import { Indexer } from '@twograph/indexer';
 import type { EditRow } from '@twograph/store';
 import type { RegisteredRepo, RepoRegistry } from '../registry.js';
 
-/** Every built-in edit operation — stateless, so one shared registry serves every repo. */
-const registry = new EditOperationRegistry();
+/**
+ * Every built-in edit operation — stateless, so one shared registry serves
+ * every repo. Exported so other routes (e.g. `optimize.ts`) can propose
+ * edits through the same registry instead of building their own.
+ */
+export const registry = new EditOperationRegistry();
 registry.register(renameSymbol);
 registry.register(addParameter);
 registry.register(removeParameter);
 registry.register(moveFunction);
 registry.register(extractFunction);
 registry.register(updateImports);
+registry.register(applyPatch);
 
 const editStatusSchema = z.enum(['pending', 'applied', 'rejected', 'expired', 'reverted']);
 
@@ -39,6 +45,7 @@ const editSummarySchema = z.object({
   resolvedAt: z.string().nullable(),
   diff: z.string(),
   affectedFiles: z.array(z.string()),
+  params: z.record(z.string(), z.unknown()),
 });
 
 const proposeBodySchema = z.object({
@@ -57,6 +64,7 @@ function toSummary(row: EditRow): z.infer<typeof editSummarySchema> {
     resolvedAt: row.resolved_at,
     diff: row.diff,
     affectedFiles: Object.keys(fileHashes),
+    params: JSON.parse(row.params_json) as Record<string, unknown>,
   };
 }
 

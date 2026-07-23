@@ -21,5 +21,14 @@
     "@twograph/core": "workspace:*",
     "web-tree-sitter": "^0.25.10",
     "tree-sitter-wasms": "^0.1.12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nahid-NHB/TwoGraph-RAG.git",
+    "directory": "packages/parser"
+  },
+  "homepage": "https://github.com/Nahid-NHB/TwoGraph-RAG/tree/main/packages/parser#readme",
+  "bugs": {
+    "url": "https://github.com/Nahid-NHB/TwoGraph-RAG/issues"
   }
 }

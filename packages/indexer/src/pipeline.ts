@@ -57,11 +57,14 @@ export class Indexer {
     this.writer = new GraphWriter(deps.graphClient);
   }
 
-  async run(options: { rebuild?: boolean; runId?: string } = {}): Promise<IndexRunResult> {
+  async run(
+    options: { rebuild?: boolean; runId?: string; kind?: 'full' | 'incremental' | 'watch' } = {},
+  ): Promise<IndexRunResult> {
     const started = performance.now();
     const { repo, store, fts, vectors } = this.deps;
     const runId =
-      options.runId ?? store.startIndexRun(repo.id, options.rebuild ? 'full' : 'incremental');
+      options.runId ??
+      store.startIndexRun(repo.id, options.kind ?? (options.rebuild ? 'full' : 'incremental'));
     const errors: IndexRunResult['errors'] = [];
 
     try {
@@ -263,6 +266,13 @@ export class Indexer {
         changed: diff.changed.length,
         removed: diff.removed.length,
       };
+      // Bumps the "index version" that generation-keyed caches (GraphQueries,
+      // the RAG pipeline's search/multi-query caches — issue #71) key off of,
+      // so cached results from before this run stop being served once
+      // something actually changed.
+      if (stats.added > 0 || stats.changed > 0 || stats.removed > 0) {
+        store.bumpRepoGeneration(repo.id);
+      }
       store.finishIndexRun(
         runId,
         stats,

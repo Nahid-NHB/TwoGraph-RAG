@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import picomatch from 'picomatch';
 
-const DEFAULT_IGNORES = [
+export const DEFAULT_IGNORES = [
   '**/node_modules/**',
   '**/.git/**',
   '**/dist/**',
@@ -11,6 +11,12 @@ const DEFAULT_IGNORES = [
   '**/.next/**',
   '**/.turbo/**',
 ];
+
+/** Same ignore-glob matching `discoverFiles` uses internally — shared with the watcher. */
+export function buildIgnoreMatcher(ignore: readonly string[] = []): (relPath: string) => boolean {
+  const isIgnored = picomatch([...DEFAULT_IGNORES, ...ignore], { dot: true });
+  return (relPath: string) => isIgnored(relPath) || isIgnored(`${relPath}/`);
+}
 
 export interface DiscoveredFile {
   relPath: string;
@@ -23,7 +29,7 @@ export function discoverFiles(
   extensions: readonly string[],
   ignore: readonly string[] = [],
 ): DiscoveredFile[] {
-  const isIgnored = picomatch([...DEFAULT_IGNORES, ...ignore], { dot: true });
+  const isIgnored = buildIgnoreMatcher(ignore);
   const extSet = new Set(extensions);
   const results: DiscoveredFile[] = [];
 
@@ -37,7 +43,7 @@ export function discoverFiles(
     for (const entry of entries) {
       const full = join(dir, entry);
       const rel = relative(rootPath, full).replaceAll('\\', '/');
-      if (isIgnored(rel) || isIgnored(`${rel}/`)) continue;
+      if (isIgnored(rel)) continue;
       let stat;
       try {
         stat = statSync(full);

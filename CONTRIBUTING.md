@@ -33,3 +33,8 @@ pnpm lint && pnpm typecheck
 ## Releases
 
 Changesets (`pnpm changeset`) on every user-facing change; release PRs are automated.
+
+The `E2E smoke test (release gate)` CI check (issue #73,
+`packages/server/test/integration/e2e-smoke.int.test.ts`) drives the whole
+index → search → ask → edit journey over the real HTTP API and must pass
+before merging to `main`.

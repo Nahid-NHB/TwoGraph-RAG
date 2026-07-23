@@ -1,15 +1,14 @@
 import { Command } from 'commander';
+import { runDeadCode } from './commands/deadcode.js';
+import { runDeps } from './commands/deps.js';
+import { runGraph } from './commands/graph.js';
 import { runInit } from './commands/init.js';
 import { runIndex } from './commands/index-repo.js';
+import { runMcp } from './commands/mcp.js';
+import { runOptimize } from './commands/optimize.js';
 import { runQuery } from './commands/query.js';
 import { runSearch } from './commands/search.js';
-
-const NOT_IMPLEMENTED: ReadonlyArray<{ name: string; args: string; description: string }> = [
-  { name: 'graph', args: '<template>', description: 'Run a graph query template' },
-  { name: 'deadcode', args: '', description: 'Report unreachable code from entry points' },
-  { name: 'serve', args: '', description: 'Start the REST API server' },
-  { name: 'mcp', args: '', description: 'Start the MCP server (stdio)' },
-];
+import { runServe } from './commands/serve.js';
 
 export interface ProgramIo {
   out(line: string): void;
@@ -38,7 +37,8 @@ export function buildProgram(io: ProgramIo = { out: console.log, err: console.er
     .command('index [path]')
     .description('Index a repository into graph + vector stores')
     .option('--rebuild', 'wipe and rebuild the index from scratch')
-    .action(async (path: string | undefined, opts: { rebuild?: boolean }) => {
+    .option('--watch', 'keep watching for changes and reindex incrementally')
+    .action(async (path: string | undefined, opts: { rebuild?: boolean; watch?: boolean }) => {
       await runIndex(process.cwd(), path, opts, io);
     });
 
@@ -66,13 +66,61 @@ export function buildProgram(io: ProgramIo = { out: console.log, err: console.er
       await runQuery(process.cwd(), question, { json }, io);
     });
 
-  for (const cmd of NOT_IMPLEMENTED) {
-    const c = program.command(`${cmd.name} ${cmd.args}`.trim()).description(cmd.description);
-    c.allowUnknownOption(true).action(() => {
-      io.err(`"twograph ${cmd.name}" is not implemented yet — track progress on GitHub issues.`);
-      process.exitCode = 2;
+  program
+    .command('mcp')
+    .description('Start the MCP server (stdio by default)')
+    .option('--http', 'serve streamable HTTP instead of stdio')
+    .option('--port <n>', 'HTTP port (default 4802)')
+    .action(async (opts: { http?: boolean; port?: string }) => {
+      await runMcp(opts, io);
     });
-  }
+
+  program
+    .command('deadcode')
+    .description('Report unreachable code from entry points')
+    .option(
+      '--entry <path...>',
+      'entry-point file paths (repo-relative); defaults to auto-detected',
+    )
+    .option('--tests', 'also treat symbols defined in test files as entry points')
+    .action(async (opts: { entry?: string[]; tests?: boolean }) => {
+      const json = Boolean(program.opts()['json']);
+      await runDeadCode(process.cwd(), { ...opts, json }, io);
+    });
+
+  program
+    .command('deps')
+    .description('Parse manifests/configs into the graph and report unused/phantom dependencies')
+    .action(async () => {
+      const json = Boolean(program.opts()['json']);
+      await runDeps(process.cwd(), { json }, io);
+    });
+
+  program
+    .command('optimize <symbolId>')
+    .description('Rule-pack + LLM-composed improvement suggestions for a symbol')
+    .option('--apply', 'propose the suggested patch (if any) as a pending edit')
+    .action(async (symbolId: string, opts: { apply?: boolean }) => {
+      const json = Boolean(program.opts()['json']);
+      await runOptimize(process.cwd(), symbolId, { ...opts, json }, io);
+    });
+
+  program
+    .command('serve')
+    .description('Start the REST API server (repos register at runtime via POST /v1/repos)')
+    .option('--port <n>', 'port to listen on (default: config server.port, else 4801)')
+    .action(async (opts: { port?: string }) => {
+      await runServe(process.cwd(), opts, io);
+    });
+
+  program
+    .command('graph <template>')
+    .description('Run a named, safe graph query template (see docs/05-graph-schema.md)')
+    .option('--param <kv...>', 'template param as key=value (repeatable)')
+    .action(async (template: string, opts: { param?: string[] }) => {
+      const json = Boolean(program.opts()['json']);
+      await runGraph(process.cwd(), template, { ...opts, json }, io);
+    });
 
   return program;
 }

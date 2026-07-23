@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../analysis/tsconfig.build.json" },
+    { "path": "../core/tsconfig.build.json" },
+    { "path": "../graph/tsconfig.build.json" },
+    { "path": "../store/tsconfig.build.json" },
+    { "path": "../vector/tsconfig.build.json" },
+    { "path": "../indexer/tsconfig.build.json" },
+    { "path": "../editing/tsconfig.build.json" },
+    { "path": "../llm/tsconfig.build.json" }
+  ]
+}

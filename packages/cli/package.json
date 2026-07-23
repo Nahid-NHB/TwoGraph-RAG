@@ -21,14 +21,27 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@twograph/analysis": "workspace:*",
     "@twograph/core": "workspace:*",
+    "@twograph/editing": "workspace:*",
     "@twograph/graph": "workspace:*",
     "@twograph/indexer": "workspace:*",
     "@twograph/llm": "workspace:*",
+    "@twograph/mcp": "workspace:*",
     "@twograph/rag": "workspace:*",
     "@twograph/retrieval": "workspace:*",
+    "@twograph/server": "workspace:*",
     "@twograph/store": "workspace:*",
     "@twograph/vector": "workspace:*",
     "commander": "^14.0.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nahid-NHB/TwoGraph-RAG.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/Nahid-NHB/TwoGraph-RAG/tree/main/packages/cli#readme",
+  "bugs": {
+    "url": "https://github.com/Nahid-NHB/TwoGraph-RAG/issues"
   }
 }

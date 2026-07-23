@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { edgeKindSchema, NotFoundError, ValidationError } from '@twograph/core';
+import { edgeKindSchema, LruCache, NotFoundError, ValidationError } from '@twograph/core';
 import type { GraphClient } from './client.js';
 
 export interface GraphNodeSummary {
@@ -42,59 +42,113 @@ function toSummary(row: { get(key: string): unknown }): GraphNodeSummary {
 const RETURN_SUMMARY = (v: string): string =>
   `${v}.id AS id, ${v}.name AS name, labels(${v})[0] AS kind, ${v}.path AS path`;
 
+export interface GraphQueriesCacheOptions {
+  /** Current "index version" for a repo — bumped by the indexer on writes
+   * (issue #71). Cache entries are keyed by this value, so a reindex that
+   * changes anything naturally stops serving stale results without needing
+   * an explicit invalidation call. */
+  getGeneration: (repo: string) => number;
+  /** Per-repo LRU capacity. Default 500. */
+  maxEntriesPerRepo?: number;
+}
+
 /**
  * Typed, parameterized query layer (issue #28). Surfaces never concatenate
  * Cypher — they call these methods or the safe template registry below.
+ *
+ * Caching is opt-in (issue #71): pass `cacheOptions` for a long-lived
+ * instance shared across many calls (e.g. one per registered repo in the
+ * server) to get generation-keyed LRU caching of every read below. Omit it
+ * (the default) for exactly the old, uncached behavior.
  */
 export class GraphQueries {
-  constructor(private readonly client: GraphClient) {}
+  private readonly cachesByRepo = new Map<string, LruCache<string, unknown>>();
+
+  constructor(
+    private readonly client: GraphClient,
+    private readonly cacheOptions?: GraphQueriesCacheOptions,
+  ) {}
+
+  private repoCache(repo: string): LruCache<string, unknown> {
+    let cache = this.cachesByRepo.get(repo);
+    if (!cache) {
+      cache = new LruCache(this.cacheOptions?.maxEntriesPerRepo ?? 500);
+      this.cachesByRepo.set(repo, cache);
+    }
+    return cache;
+  }
+
+  private async cached<T>(
+    repo: string,
+    method: string,
+    keyParts: unknown,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    if (!this.cacheOptions) return fn();
+    const generation = this.cacheOptions.getGeneration(repo);
+    const cache = this.repoCache(repo);
+    const key = `${String(generation)}:${method}:${JSON.stringify(keyParts)}`;
+    const hit = cache.get(key);
+    if (hit !== undefined) return hit as T;
+    const result = await fn();
+    cache.set(key, result);
+    return result;
+  }
 
   /** Upstream call hierarchy: who (transitively) calls this symbol. */
   async callers(repo: string, symbolId: string, depth = 2): Promise<HierarchyEntry[]> {
     const d = clampDepth(depth);
-    const rows = await this.client.run(
-      `MATCH p = (caller)-[:CALLS*1..${String(d)}]->(t {id: $id})
-       WHERE t.repoId = $repo
-       RETURN DISTINCT ${RETURN_SUMMARY('caller')}, length(p) AS depth
-       ORDER BY depth, name`,
-      { id: symbolId, repo },
-    );
-    return rows.map((r) => ({ ...toSummary(r), depth: r.get('depth') as number }));
+    return this.cached(repo, 'callers', [symbolId, d], async () => {
+      const rows = await this.client.run(
+        `MATCH p = (caller)-[:CALLS*1..${String(d)}]->(t {id: $id})
+         WHERE t.repoId = $repo
+         RETURN DISTINCT ${RETURN_SUMMARY('caller')}, length(p) AS depth
+         ORDER BY depth, name`,
+        { id: symbolId, repo },
+      );
+      return rows.map((r) => ({ ...toSummary(r), depth: r.get('depth') as number }));
+    });
   }
 
   /** Downstream call hierarchy: what this symbol (transitively) calls. */
   async callees(repo: string, symbolId: string, depth = 2): Promise<HierarchyEntry[]> {
     const d = clampDepth(depth);
-    const rows = await this.client.run(
-      `MATCH p = (s {id: $id})-[:CALLS*1..${String(d)}]->(callee)
-       WHERE s.repoId = $repo
-       RETURN DISTINCT ${RETURN_SUMMARY('callee')}, length(p) AS depth
-       ORDER BY depth, name`,
-      { id: symbolId, repo },
-    );
-    return rows.map((r) => ({ ...toSummary(r), depth: r.get('depth') as number }));
+    return this.cached(repo, 'callees', [symbolId, d], async () => {
+      const rows = await this.client.run(
+        `MATCH p = (s {id: $id})-[:CALLS*1..${String(d)}]->(callee)
+         WHERE s.repoId = $repo
+         RETURN DISTINCT ${RETURN_SUMMARY('callee')}, length(p) AS depth
+         ORDER BY depth, name`,
+        { id: symbolId, repo },
+      );
+      return rows.map((r) => ({ ...toSummary(r), depth: r.get('depth') as number }));
+    });
   }
 
   /** Which components (transitively) render this component. */
   async componentUsage(repo: string, componentId: string, depth = 3): Promise<HierarchyEntry[]> {
     const d = clampDepth(depth);
-    const rows = await this.client.run(
-      `MATCH p = (user:Component)-[:USES_COMPONENT*1..${String(d)}]->(c {id: $id})
-       WHERE c.repoId = $repo
-       RETURN DISTINCT ${RETURN_SUMMARY('user')}, length(p) AS depth
-       ORDER BY depth, name`,
-      { id: componentId, repo },
-    );
-    return rows.map((r) => ({ ...toSummary(r), depth: r.get('depth') as number }));
+    return this.cached(repo, 'componentUsage', [componentId, d], async () => {
+      const rows = await this.client.run(
+        `MATCH p = (user:Component)-[:USES_COMPONENT*1..${String(d)}]->(c {id: $id})
+         WHERE c.repoId = $repo
+         RETURN DISTINCT ${RETURN_SUMMARY('user')}, length(p) AS depth
+         ORDER BY depth, name`,
+        { id: componentId, repo },
+      );
+      return rows.map((r) => ({ ...toSummary(r), depth: r.get('depth') as number }));
+    });
   }
 
   /** Exact name match — the seed lookup behind name-anchored graph intents. */
   async findByName(repo: string, name: string): Promise<GraphNodeSummary[]> {
-    const rows = await this.client.run(
-      `MATCH (s {name: $name, repoId: $repo}) RETURN ${RETURN_SUMMARY('s')}`,
-      { name, repo },
-    );
-    return rows.map((r) => toSummary(r));
+    return this.cached(repo, 'findByName', [name], async () => {
+      const rows = await this.client.run(
+        `MATCH (s {name: $name, repoId: $repo}) RETURN ${RETURN_SUMMARY('s')}`,
+        { name, repo },
+      );
+      return rows.map((r) => toSummary(r));
+    });
   }
 
   /** Immediate neighbors grouped by direction and edge type. */
@@ -105,31 +159,38 @@ export class GraphQueries {
     outgoing: (GraphNodeSummary & { edge: string })[];
     incoming: (GraphNodeSummary & { edge: string })[];
   }> {
-    const outgoing = await this.client.run(
-      `MATCH (s {id: $id})-[r]->(m) WHERE s.repoId = $repo
-       RETURN type(r) AS edge, ${RETURN_SUMMARY('m')}`,
-      { id: symbolId, repo },
-    );
-    const incoming = await this.client.run(
-      `MATCH (s {id: $id})<-[r]-(m) WHERE s.repoId = $repo
-       RETURN type(r) AS edge, ${RETURN_SUMMARY('m')}`,
-      { id: symbolId, repo },
-    );
-    const map = (rows: typeof outgoing) =>
-      rows.map((r) => ({ ...toSummary(r), edge: r.get('edge') as string }));
-    return { outgoing: map(outgoing), incoming: map(incoming) };
+    return this.cached(repo, 'neighbors', [symbolId], async () => {
+      const outgoing = await this.client.run(
+        `MATCH (s {id: $id})-[r]->(m) WHERE s.repoId = $repo
+         RETURN type(r) AS edge, ${RETURN_SUMMARY('m')}`,
+        { id: symbolId, repo },
+      );
+      const incoming = await this.client.run(
+        `MATCH (s {id: $id})<-[r]-(m) WHERE s.repoId = $repo
+         RETURN type(r) AS edge, ${RETURN_SUMMARY('m')}`,
+        { id: symbolId, repo },
+      );
+      const map = (rows: typeof outgoing) =>
+        rows.map((r) => ({ ...toSummary(r), edge: r.get('edge') as string }));
+      return { outgoing: map(outgoing), incoming: map(incoming) };
+    });
   }
 
   /** Node detail with all stored properties. */
   async symbolDetail(repo: string, symbolId: string): Promise<Record<string, unknown>> {
-    const rows = await this.client.run(
-      `MATCH (s {id: $id}) WHERE s.repoId = $repo
-       RETURN properties(s) AS props, labels(s)[0] AS kind`,
-      { id: symbolId, repo },
-    );
-    const first = rows[0];
-    if (!first) throw new NotFoundError(`symbol not found: ${symbolId}`);
-    return { ...(first.get('props') as Record<string, unknown>), kind: first.get('kind') };
+    return this.cached(repo, 'symbolDetail', [symbolId], async () => {
+      const rows = await this.client.run(
+        `MATCH (s {id: $id}) WHERE s.repoId = $repo
+         RETURN properties(s) AS props, labels(s)[0] AS kind`,
+        { id: symbolId, repo },
+      );
+      const first = rows[0];
+      if (!first) throw new NotFoundError(`symbol not found: ${symbolId}`);
+      return {
+        ...(first.get('props') as Record<string, unknown>),
+        kind: first.get('kind') as string,
+      };
+    });
   }
 
   /** Bounded subgraph for visualization, filtered by edge types. */
@@ -141,36 +202,38 @@ export class GraphQueries {
   ): Promise<SubgraphResult> {
     const d = clampDepth(depth);
     const types = edgeTypes.map((t) => edgeKindSchema.parse(t)).join('|');
-    const rows = await this.client.run(
-      `MATCH p = (root {id: $id})-[:${types}*1..${String(d)}]-(n)
-       WHERE root.repoId = $repo
-       UNWIND relationships(p) AS rel
-       RETURN DISTINCT startNode(rel).id AS fromId, endNode(rel).id AS toId, type(rel) AS type,
-              startNode(rel).name AS fromName, endNode(rel).name AS toName,
-              labels(startNode(rel))[0] AS fromKind, labels(endNode(rel))[0] AS toKind,
-              startNode(rel).path AS fromPath, endNode(rel).path AS toPath`,
-      { id: rootId, repo },
-    );
-    const nodes = new Map<string, GraphNodeSummary>();
-    const edges: SubgraphResult['edges'] = [];
-    for (const r of rows) {
-      const from = r.get('fromId') as string;
-      const to = r.get('toId') as string;
-      nodes.set(from, {
-        id: from,
-        name: r.get('fromName') as string,
-        kind: r.get('fromKind') as string,
-        path: (r.get('fromPath') as string | null) ?? null,
-      });
-      nodes.set(to, {
-        id: to,
-        name: r.get('toName') as string,
-        kind: r.get('toKind') as string,
-        path: (r.get('toPath') as string | null) ?? null,
-      });
-      edges.push({ from, to, type: r.get('type') as string });
-    }
-    return { nodes: [...nodes.values()], edges };
+    return this.cached(repo, 'subgraph', [rootId, types, d], async () => {
+      const rows = await this.client.run(
+        `MATCH p = (root {id: $id})-[:${types}*1..${String(d)}]-(n)
+         WHERE root.repoId = $repo
+         UNWIND relationships(p) AS rel
+         RETURN DISTINCT startNode(rel).id AS fromId, endNode(rel).id AS toId, type(rel) AS type,
+                startNode(rel).name AS fromName, endNode(rel).name AS toName,
+                labels(startNode(rel))[0] AS fromKind, labels(endNode(rel))[0] AS toKind,
+                startNode(rel).path AS fromPath, endNode(rel).path AS toPath`,
+        { id: rootId, repo },
+      );
+      const nodes = new Map<string, GraphNodeSummary>();
+      const edges: SubgraphResult['edges'] = [];
+      for (const r of rows) {
+        const from = r.get('fromId') as string;
+        const to = r.get('toId') as string;
+        nodes.set(from, {
+          id: from,
+          name: r.get('fromName') as string,
+          kind: r.get('fromKind') as string,
+          path: (r.get('fromPath') as string | null) ?? null,
+        });
+        nodes.set(to, {
+          id: to,
+          name: r.get('toName') as string,
+          kind: r.get('toKind') as string,
+          path: (r.get('toPath') as string | null) ?? null,
+        });
+        edges.push({ from, to, type: r.get('type') as string });
+      }
+      return { nodes: [...nodes.values()], edges };
+    });
   }
 
   /**
@@ -180,21 +243,25 @@ export class GraphQueries {
    * their re-exported target).
    */
   async dependentFiles(repo: string, path: string): Promise<string[]> {
-    const rows = await this.client.run(
-      `MATCH (d:File {repoId: $repo})-[:IMPORTS|EXPORTS]->(:File {id: $fileId})
-       RETURN DISTINCT d.path AS path`,
-      { repo, fileId: `${repo}:${path}` },
-    );
-    return rows.map((r) => r.get('path') as string);
+    return this.cached(repo, 'dependentFiles', [path], async () => {
+      const rows = await this.client.run(
+        `MATCH (d:File {repoId: $repo})-[:IMPORTS|EXPORTS]->(:File {id: $fileId})
+         RETURN DISTINCT d.path AS path`,
+        { repo, fileId: `${repo}:${path}` },
+      );
+      return rows.map((r) => r.get('path') as string);
+    });
   }
 
   /** All file paths of a repository (explorer tree is built client-side). */
   async filePaths(repo: string): Promise<string[]> {
-    const rows = await this.client.run(
-      'MATCH (f:File {repoId: $repo}) RETURN f.path AS path ORDER BY path',
-      { repo },
-    );
-    return rows.map((r) => r.get('path') as string);
+    return this.cached(repo, 'filePaths', [], async () => {
+      const rows = await this.client.run(
+        'MATCH (f:File {repoId: $repo}) RETURN f.path AS path ORDER BY path',
+        { repo },
+      );
+      return rows.map((r) => r.get('path') as string);
+    });
   }
 
   /** Shortest undirected path between two symbols (BFS, bounded). */
@@ -203,19 +270,21 @@ export class GraphQueries {
     fromId: string,
     toId: string,
   ): Promise<{ nodeIds: string[]; edgeTypes: string[] } | null> {
-    const rows = await this.client.run(
-      `MATCH (a {id: $from}), (b {id: $to}), p = (a)-[*BFS ..10]-(b)
-       WHERE a.repoId = $repo
-       RETURN [n IN nodes(p) | n.id] AS nodeIds, [r IN relationships(p) | type(r)] AS edgeTypes
-       LIMIT 1`,
-      { from: fromId, to: toId, repo },
-    );
-    const first = rows[0];
-    if (!first) return null;
-    return {
-      nodeIds: first.get('nodeIds') as string[],
-      edgeTypes: first.get('edgeTypes') as string[],
-    };
+    return this.cached(repo, 'shortestPath', [fromId, toId], async () => {
+      const rows = await this.client.run(
+        `MATCH (a {id: $from}), (b {id: $to}), p = (a)-[*BFS ..10]-(b)
+         WHERE a.repoId = $repo
+         RETURN [n IN nodes(p) | n.id] AS nodeIds, [r IN relationships(p) | type(r)] AS edgeTypes
+         LIMIT 1`,
+        { from: fromId, to: toId, repo },
+      );
+      const first = rows[0];
+      if (!first) return null;
+      return {
+        nodeIds: first.get('nodeIds') as string[],
+        edgeTypes: first.get('edgeTypes') as string[],
+      };
+    });
   }
 }
 

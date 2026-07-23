@@ -107,6 +107,12 @@ export const MIGRATIONS: readonly { version: number; sql: string }[] = [
       );
     `,
   },
+  {
+    version: 3,
+    sql: `
+      ALTER TABLE repositories ADD COLUMN generation INTEGER NOT NULL DEFAULT 0;
+    `,
+  },
 ];
 
 export function applyMigrations(db: DatabaseSync): void {

@@ -1,4 +1,4 @@
-import { createLogger, type Citation, type RankedHit } from '@twograph/core';
+import { createLogger, type Citation, type LruCache, type RankedHit } from '@twograph/core';
 import type { GraphQueries } from '@twograph/graph';
 import type { CompletionResult, LlmProvider, Usage } from '@twograph/llm';
 import {
@@ -35,6 +35,11 @@ export interface RagPipelineDeps {
   store: MetadataStore;
   /** Reads exact source lines for a symbol's span — see @twograph/retrieval's context assembler. */
   readSpan(path: string, startLine: number, endLine: number): string;
+  /** Opt-in caches (issue #71), shared across requests by whoever owns this
+   * repo's long-lived deps (e.g. the server's per-repo registry entry). Only
+   * used when `options.indexVersion` is also set — see {@link RagPipelineOptions}. */
+  searchCache?: LruCache<string, RankedHit[]>;
+  multiQueryCache?: LruCache<string, MultiQueryResult>;
 }
 
 export interface RagPipelineOptions {
@@ -58,6 +63,10 @@ export interface RagPipelineOptions {
   onToken?: (delta: string) => void;
   /** Propagated into every LLM call; aborting cancels the in-flight LLM request (issue #47). */
   signal?: AbortSignal;
+  /** The repo's current "index version" (`store.repoGeneration`, issue #71).
+   * Enables `deps.searchCache`/`deps.multiQueryCache` — omit to run uncached,
+   * exactly as before. */
+  indexVersion?: number;
 }
 
 export interface RagAnswer {
@@ -100,6 +109,25 @@ async function streamCompletion(
     else if (event.type === 'done') result = event.result;
   }
   if (!result) throw new Error('llm.stream() ended without a done event');
+  return result;
+}
+
+/** Opt-in cache around a single retriever call (issue #71) — a no-op passthrough
+ * when `cache` is undefined (no `options.indexVersion` given, or no `deps.searchCache`). */
+async function cachedRetrieve(
+  cache: LruCache<string, RankedHit[]> | undefined,
+  cacheKeyPrefix: string,
+  source: string,
+  query: string,
+  k: number,
+  fn: () => Promise<RankedHit[]>,
+): Promise<RankedHit[]> {
+  if (!cache) return fn();
+  const key = `${cacheKeyPrefix}:${source}:${query}:${String(k)}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const result = await fn();
+  cache.set(key, result);
   return result;
 }
 
@@ -151,10 +179,16 @@ export async function runRagPipeline(
   const repo = options.repo;
   const k = options.topKPerRetriever ?? 20;
   const graphPathBySymbol = new Map<string, string>();
+  const cacheKeyPrefix =
+    options.indexVersion !== undefined ? `${repo}:${String(options.indexVersion)}` : undefined;
+  const searchCache = cacheKeyPrefix ? deps.searchCache : undefined;
+  const multiQueryCache = cacheKeyPrefix
+    ? deps.multiQueryCache && { store: deps.multiQueryCache, key: `${cacheKeyPrefix}:${question}` }
+    : undefined;
 
   options.onStage?.('multiquery');
   const multiQuery = await timed(stageTimings, 'multiquery', () =>
-    generateMultiQuery(deps.llm, question, options.signal),
+    generateMultiQuery(deps.llm, question, options.signal, multiQueryCache),
   );
 
   options.onStage?.('retrieve');
@@ -164,13 +198,24 @@ export async function runRagPipeline(
     const vector: RankedHit[][] = [];
     for (const q of multiQuery.queries) {
       const [bm25Hits, vectorHits] = await Promise.all([
-        deps.bm25.retrieve(q, { k }),
-        deps.vector.retrieve(q, { k }),
+        cachedRetrieve(searchCache, cacheKeyPrefix ?? '', 'bm25', q, k, () =>
+          deps.bm25.retrieve(q, { k }),
+        ),
+        cachedRetrieve(searchCache, cacheKeyPrefix ?? '', 'vector', q, k, () =>
+          deps.vector.retrieve(q, { k }),
+        ),
       ]);
       bm25.push(bm25Hits);
       vector.push(vectorHits);
     }
-    const graph = await graphRetriever.retrieve(question, { k });
+    const graph = await cachedRetrieve(
+      searchCache,
+      cacheKeyPrefix ?? '',
+      'graph',
+      question,
+      k,
+      () => graphRetriever.retrieve(question, { k }),
+    );
     return { bm25Lists: bm25, vectorLists: vector, graphHits: graph };
   });
   for (const hit of graphHits)

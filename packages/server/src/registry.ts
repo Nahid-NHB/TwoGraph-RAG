@@ -1,7 +1,16 @@
 import { basename, join } from 'node:path';
-import { hashContent, loadConfig, NotFoundError, type TwoGraphConfig } from '@twograph/core';
+import {
+  hashContent,
+  loadConfig,
+  LruCache,
+  NotFoundError,
+  type RankedHit,
+  type TwoGraphConfig,
+} from '@twograph/core';
 import { GraphClient, GraphQueries } from '@twograph/graph';
+import type { WatchHandle } from '@twograph/indexer';
 import { createLlmProvider, type LlmProvider } from '@twograph/llm';
+import { type MultiQueryResult } from '@twograph/rag';
 import { CrossEncoderReranker, type Reranker } from '@twograph/retrieval';
 import { FtsIndex, MetadataStore, openDatabase } from '@twograph/store';
 import {
@@ -10,6 +19,10 @@ import {
   type Embedder,
   type VectorStore,
 } from '@twograph/vector';
+
+/** Per-repo LRU capacity for the search/multi-query caches (issue #71). */
+const SEARCH_CACHE_SIZE = 500;
+const MULTI_QUERY_CACHE_SIZE = 200;
 
 export interface RegisteredRepo {
   id: string;
@@ -25,6 +38,12 @@ export interface RegisteredRepo {
   llm: LlmProvider;
   /** Shared across requests — the cross-encoder loads its ONNX model once (issue #47). */
   reranker: Reranker;
+  /** Set while `POST /v1/repos/:repo/watch {enabled:true}` is active (issue #66). */
+  watchHandle?: WatchHandle | undefined;
+  /** Generation-keyed caches (issue #71), shared across every request for
+   * this repo for the life of the process; see `store.repoGeneration`. */
+  searchCache: LruCache<string, RankedHit[]>;
+  multiQueryCache: LruCache<string, MultiQueryResult>;
 }
 
 /** Derived from the resolved root path, matching the CLI so both agree on repo identity. */
@@ -75,11 +94,15 @@ export class RepoRegistry {
       store,
       fts: new FtsIndex(db),
       graphClient,
-      graphQueries: new GraphQueries(graphClient),
+      graphQueries: new GraphQueries(graphClient, {
+        getGeneration: (r) => store.repoGeneration(r),
+      }),
       embedder,
       vectors,
       llm: createLlmProvider(config),
       reranker: new CrossEncoderReranker(),
+      searchCache: new LruCache(SEARCH_CACHE_SIZE),
+      multiQueryCache: new LruCache(MULTI_QUERY_CACHE_SIZE),
       ...overrides,
     };
     this.repos.set(id, repo);
@@ -102,6 +125,9 @@ export class RepoRegistry {
   }
 
   async closeAll(): Promise<void> {
-    for (const repo of this.repos.values()) await repo.graphClient.close();
+    for (const repo of this.repos.values()) {
+      await repo.watchHandle?.close();
+      await repo.graphClient.close();
+    }
   }
 }

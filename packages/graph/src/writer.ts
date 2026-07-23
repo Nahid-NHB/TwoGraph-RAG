@@ -1,4 +1,4 @@
-import type { CodeSymbol, ParsedFile, SymbolKind } from '@twograph/core';
+import { formatSymbolId, type CodeSymbol, type ParsedFile, type SymbolKind } from '@twograph/core';
 import type { GraphClient } from './client.js';
 import type { NodeLabel } from './schema.js';
 
@@ -493,6 +493,63 @@ export class GraphWriter {
     if (options.deleteFile) {
       await this.client.run('MATCH (f:File {id: $fileId}) DETACH DELETE f', { fileId });
     }
+  }
+
+  /**
+   * A renamed file is a delete (old path) + add (new path) to the indexer,
+   * which — per `removeFileSubgraph`'s permanent-Route design — leaves the
+   * old Route node orphaned while parsing the new path mints a fresh one
+   * with a new (path-based) id. This merges that fresh duplicate back into
+   * the surviving old node so the Route's identity survives the rename
+   * (issue #66): re-point its CONTAINS/HANDLES edges onto the old node,
+   * delete the duplicate, then re-key the old node's id/path to the new
+   * location. Returns the number of routes migrated.
+   */
+  async migrateRenamedRoutes(repo: string, oldPath: string, newPath: string): Promise<number> {
+    const oldPrefix = `${repo}:${oldPath}#`;
+    const orphaned = await this.client.run(
+      `MATCH (r:Route)
+       WHERE r.id STARTS WITH $oldPrefix AND NOT exists(()-[:CONTAINS]->(r))
+       RETURN r.id AS id`,
+      { oldPrefix },
+    );
+
+    let migrated = 0;
+    for (const row of orphaned) {
+      const oldId = row.get('id') as string;
+      const qualifiedName = oldId.slice(oldPrefix.length);
+      const newId = formatSymbolId({ repo, path: newPath, qualifiedName });
+
+      const fresh = await this.client.run(
+        `MATCH (newR:Route {id: $newId}) RETURN properties(newR) AS props LIMIT 1`,
+        { newId },
+      );
+      const freshRow = fresh[0];
+      if (!freshRow) continue; // nothing re-created at the new path yet
+      const freshProps = freshRow.get('props') as Record<string, unknown>;
+
+      await this.client.run(
+        `MATCH (newFile:File)-[c:CONTAINS]->(:Route {id: $newId}), (oldR:Route {id: $oldId})
+         MERGE (newFile)-[:CONTAINS]->(oldR)
+         DELETE c`,
+        { newId, oldId },
+      );
+      await this.client.run(
+        `MATCH (h)-[hr:HANDLES]->(:Route {id: $newId}), (oldR:Route {id: $oldId})
+         MERGE (h)-[:HANDLES]->(oldR)
+         DELETE hr`,
+        { newId, oldId },
+      );
+      // The duplicate must go before old.id is re-keyed to newId, or the two
+      // nodes briefly share an id and {id: $newId} would match either.
+      await this.client.run(`MATCH (newR:Route {id: $newId}) DETACH DELETE newR`, { newId });
+      await this.client.run(
+        `MATCH (oldR:Route {id: $oldId}) SET oldR += $props, oldR.id = $newId, oldR.path = $newPath`,
+        { oldId, newId, newPath, props: freshProps },
+      );
+      migrated++;
+    }
+    return migrated;
   }
 
   /** All write passes for one file, in order. */

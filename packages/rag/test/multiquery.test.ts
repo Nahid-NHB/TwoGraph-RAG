@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { LruCache } from '@twograph/core';
 import { MockLlmProvider } from '@twograph/llm';
-import { detectGraphIntent, generateMultiQuery } from '@twograph/rag';
+import { detectGraphIntent, generateMultiQuery, type MultiQueryResult } from '@twograph/rag';
 
 describe('detectGraphIntent', () => {
   it('detects "who calls X" and routes to the who_calls template', () => {
@@ -127,5 +128,42 @@ describe('generateMultiQuery', () => {
     await expect(
       generateMultiQuery(llm, 'how does auth work', controller.signal),
     ).rejects.toThrow();
+  });
+
+  describe('caching (issue #71)', () => {
+    it('a hit skips the LLM call entirely', async () => {
+      const llm = new MockLlmProvider([
+        JSON.stringify({ queries: ['a', 'b'] }),
+        'should never be reached',
+      ]);
+      const store = new LruCache<string, MultiQueryResult>(10);
+      const cache = { store, key: 'repo:1:how does auth work' };
+
+      const first = await generateMultiQuery(llm, 'how does auth work', undefined, cache);
+      const second = await generateMultiQuery(llm, 'how does auth work', undefined, cache);
+
+      expect(second).toEqual(first);
+      expect(llm.requests).toHaveLength(1);
+    });
+
+    it('a different key (e.g. a bumped index version) misses and re-calls the LLM', async () => {
+      const llm = new MockLlmProvider([
+        JSON.stringify({ queries: ['a', 'b'] }),
+        JSON.stringify({ queries: ['c', 'd'] }),
+      ]);
+      const store = new LruCache<string, MultiQueryResult>(10);
+
+      await generateMultiQuery(llm, 'how does auth work', undefined, {
+        store,
+        key: 'repo:1:how does auth work',
+      });
+      const second = await generateMultiQuery(llm, 'how does auth work', undefined, {
+        store,
+        key: 'repo:2:how does auth work',
+      });
+
+      expect(second.queries).toEqual(['c', 'd']);
+      expect(llm.requests).toHaveLength(2);
+    });
   });
 });

@@ -1,0 +1,45 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please search existing issues first.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps (commands, repo, config) that reproduce it.
+      placeholder: |
+        1. `twograph index ...`
+        2. `twograph query "..."`
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / output
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: TwoGraph-RAG version
+      placeholder: e.g. output of `twograph --version`
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: OS, Node version, Memgraph/Qdrant versions
+    validations:
+      required: true

@@ -4,6 +4,7 @@
 
 export const PACKAGE_NAME = '@twograph/core';
 
+export * from './cache.js';
 export * from './config.js';
 export * from './hash.js';
 export * from './ids.js';

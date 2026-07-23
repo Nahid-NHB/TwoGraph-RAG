@@ -1,0 +1,35 @@
+export {
+  findDeadCode,
+  deadCodeReportSchema,
+  deadCodeSymbolSchema,
+  deadCodeFileSchema,
+  deadCodeConfidenceSchema,
+  type DeadCodeReport,
+  type FindDeadCodeOptions,
+} from './deadcode/index.js';
+export {
+  analyzeDependencies,
+  findDependencyMismatches,
+  writeDependencyGraph,
+  dependencyReportSchema,
+  dependencyMismatchSchema,
+  dependencyNodeSchema,
+  dependencyEdgeSchema,
+  packageNodeSchema,
+  configurationNodeSchema,
+  type DependencyReport,
+  type DependencyMismatch,
+  type DependencyGraphSummary,
+} from './dependencies/index.js';
+export {
+  runAdvisor,
+  runRulePack,
+  RULE_PACK,
+  advisorReportSchema,
+  advisorFindingSchema,
+  patchSuggestionSchema,
+  type AdvisorReport,
+  type PatchSuggestion,
+  type Rule,
+  type RuleFinding,
+} from './advisor/index.js';

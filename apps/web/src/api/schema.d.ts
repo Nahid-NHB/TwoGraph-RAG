@@ -681,7 +681,33 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            repoId: string;
+                            title: string | null;
+                            createdAt: string;
+                        }[];
+                    };
+                };
+            };
+        };
         put?: never;
         post: {
             parameters: {
@@ -867,6 +893,9 @@ export interface paths {
                             resolvedAt: string | null;
                             diff: string;
                             affectedFiles: string[];
+                            params: {
+                                [key: string]: unknown;
+                            };
                         }[];
                     };
                 };
@@ -909,6 +938,9 @@ export interface paths {
                             resolvedAt: string | null;
                             diff: string;
                             affectedFiles: string[];
+                            params: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -955,6 +987,9 @@ export interface paths {
                             resolvedAt: string | null;
                             diff: string;
                             affectedFiles: string[];
+                            params: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1005,6 +1040,9 @@ export interface paths {
                             resolvedAt: string | null;
                             diff: string;
                             affectedFiles: string[];
+                            params: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1053,6 +1091,9 @@ export interface paths {
                             resolvedAt: string | null;
                             diff: string;
                             affectedFiles: string[];
+                            params: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1101,6 +1142,266 @@ export interface paths {
                             resolvedAt: string | null;
                             diff: string;
                             affectedFiles: string[];
+                            params: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/repos/{repo}/watch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            enabled: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        enabled: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            enabled: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/repos/{repo}/deadcode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    entry?: string;
+                    tests?: boolean;
+                };
+                header?: never;
+                path: {
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            entryPoints: string[];
+                            symbols: {
+                                id: string;
+                                name: string;
+                                kind: string;
+                                path: string;
+                                /** @enum {string} */
+                                confidence: "dead" | "possibly-used";
+                            }[];
+                            files: {
+                                id: string;
+                                path: string;
+                                /** @enum {string} */
+                                confidence: "dead" | "possibly-used";
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/repos/{repo}/deps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            packages: {
+                                id: string;
+                                path: string;
+                                name: string;
+                                version: string | null;
+                            }[];
+                            dependencies: {
+                                id: string;
+                                name: string;
+                                depKind: string | null;
+                                declared: boolean;
+                                versionRange: string | null;
+                                importCount: number;
+                            }[];
+                            edges: {
+                                from: string;
+                                to: string;
+                                versionRange: string | null;
+                            }[];
+                            configurations: {
+                                path: string;
+                                configKind: string;
+                            }[];
+                            mismatches: {
+                                name: string;
+                                /** @enum {string} */
+                                kind: "unused" | "phantom";
+                                depKind: string | null;
+                                importCount: number;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/repos/{repo}/optimize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        symbolId: string;
+                        apply?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            symbolId: string;
+                            findings: {
+                                ruleId: string;
+                                message: string;
+                                line: number;
+                                /** @enum {string} */
+                                severity: "info" | "warning";
+                            }[];
+                            advice: string;
+                            suggestedPatch: {
+                                /** @enum {string} */
+                                operation: "apply_patch";
+                                params: {
+                                    file: string;
+                                    startLine: number;
+                                    endLine: number;
+                                    newText: string;
+                                };
+                            } | null;
+                            editId: string | null;
                         };
                     };
                 };

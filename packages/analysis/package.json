@@ -1,0 +1,40 @@
+{
+  "name": "@twograph/analysis",
+  "version": "0.0.0",
+  "description": "Static analysis: dead code, dependency graph, optimization advisor",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@twograph/core": "workspace:*",
+    "@twograph/graph": "workspace:*",
+    "@twograph/llm": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@twograph/indexer": "workspace:*",
+    "@twograph/store": "workspace:*",
+    "@twograph/vector": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nahid-NHB/TwoGraph-RAG.git",
+    "directory": "packages/analysis"
+  },
+  "homepage": "https://github.com/Nahid-NHB/TwoGraph-RAG/tree/main/packages/analysis#readme",
+  "bugs": {
+    "url": "https://github.com/Nahid-NHB/TwoGraph-RAG/issues"
+  }
+}

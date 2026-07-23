@@ -24,5 +24,14 @@
     "@twograph/indexer": "workspace:*",
     "@twograph/store": "workspace:*",
     "@twograph/vector": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nahid-NHB/TwoGraph-RAG.git",
+    "directory": "packages/retrieval"
+  },
+  "homepage": "https://github.com/Nahid-NHB/TwoGraph-RAG/tree/main/packages/retrieval#readme",
+  "bugs": {
+    "url": "https://github.com/Nahid-NHB/TwoGraph-RAG/issues"
   }
 }

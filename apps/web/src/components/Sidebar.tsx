@@ -1,4 +1,12 @@
-import { FileCode2, GitBranch, MessagesSquare, Network, Search, Workflow } from 'lucide-react';
+import {
+  FileCode2,
+  GitBranch,
+  ListTree,
+  MessagesSquare,
+  Network,
+  Search,
+  Workflow,
+} from 'lucide-react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { RepoSwitcher } from './RepoSwitcher.js';
 import { ThemeToggle } from './ThemeToggle.js';
@@ -10,6 +18,7 @@ const SECTIONS = [
   { to: 'search', label: 'Search', icon: Search, activePrefixes: [] },
   { to: 'chat', label: 'Chat', icon: MessagesSquare, activePrefixes: [] },
   { to: 'graph', label: 'Graph', icon: Network, activePrefixes: [] },
+  { to: 'tree', label: 'Call Tree', icon: ListTree, activePrefixes: [] },
   { to: 'edits', label: 'Edits', icon: GitBranch, activePrefixes: [] },
   { to: 'deps', label: 'Dependencies', icon: Workflow, activePrefixes: [] },
 ] as const;
