@@ -17,6 +17,7 @@ import { registerEditRoutes } from './routes/edits.js';
 import { registerFileRoutes } from './routes/files.js';
 import { registerGraphRoutes } from './routes/graph.js';
 import { registerIndexRoutes } from './routes/index-runs.js';
+import { registerOptimizeRoutes } from './routes/optimize.js';
 import { registerRepoRoutes } from './routes/repos.js';
 import { registerSearchRoutes } from './routes/search.js';
 import { registerSymbolRoutes } from './routes/symbols.js';
@@ -61,6 +62,7 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
   registerWatchRoutes(app, registry);
   registerDeadCodeRoutes(app, registry);
   registerDepsRoutes(app, registry);
+  registerOptimizeRoutes(app, registry);
 
   app.get('/openapi.json', { schema: { hide: true } }, () => app.swagger());
 

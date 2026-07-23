@@ -3,6 +3,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ValidationError } from '@twograph/core';
 import {
   addParameter,
+  applyPatch,
   approveEdit,
   EditOperationRegistry,
   extractFunction,
@@ -26,6 +27,7 @@ registry.register(removeParameter);
 registry.register(moveFunction);
 registry.register(extractFunction);
 registry.register(updateImports);
+registry.register(applyPatch);
 
 /** Re-processes the repo so graph/embeddings reflect an applied edit. */
 function reindexer(ctx: RepoContext): () => Promise<void> {

@@ -20,6 +20,7 @@
   "dependencies": {
     "@twograph/core": "workspace:*",
     "@twograph/graph": "workspace:*",
+    "@twograph/llm": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

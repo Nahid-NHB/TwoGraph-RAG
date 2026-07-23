@@ -20,3 +20,15 @@ export {
   type DependencyMismatch,
   type DependencyGraphSummary,
 } from './dependencies/index.js';
+export {
+  runAdvisor,
+  runRulePack,
+  RULE_PACK,
+  advisorReportSchema,
+  advisorFindingSchema,
+  patchSuggestionSchema,
+  type AdvisorReport,
+  type PatchSuggestion,
+  type Rule,
+  type RuleFinding,
+} from './advisor/index.js';

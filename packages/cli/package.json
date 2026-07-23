@@ -23,6 +23,7 @@
   "dependencies": {
     "@twograph/analysis": "workspace:*",
     "@twograph/core": "workspace:*",
+    "@twograph/editing": "workspace:*",
     "@twograph/graph": "workspace:*",
     "@twograph/indexer": "workspace:*",
     "@twograph/llm": "workspace:*",

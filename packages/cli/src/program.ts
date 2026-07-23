@@ -4,6 +4,7 @@ import { runDeps } from './commands/deps.js';
 import { runInit } from './commands/init.js';
 import { runIndex } from './commands/index-repo.js';
 import { runMcp } from './commands/mcp.js';
+import { runOptimize } from './commands/optimize.js';
 import { runQuery } from './commands/query.js';
 import { runSearch } from './commands/search.js';
 
@@ -96,6 +97,15 @@ export function buildProgram(io: ProgramIo = { out: console.log, err: console.er
     .action(async () => {
       const json = Boolean(program.opts()['json']);
       await runDeps(process.cwd(), { json }, io);
+    });
+
+  program
+    .command('optimize <symbolId>')
+    .description('Rule-pack + LLM-composed improvement suggestions for a symbol')
+    .option('--apply', 'propose the suggested patch (if any) as a pending edit')
+    .action(async (symbolId: string, opts: { apply?: boolean }) => {
+      const json = Boolean(program.opts()['json']);
+      await runOptimize(process.cwd(), symbolId, { ...opts, json }, io);
     });
 
   for (const cmd of NOT_IMPLEMENTED) {
