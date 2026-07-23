@@ -20,6 +20,24 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.7.0(jiti@2.6.1))
+      '@twograph/core':
+        specifier: workspace:*
+        version: link:packages/core
+      '@twograph/graph':
+        specifier: workspace:*
+        version: link:packages/graph
+      '@twograph/indexer':
+        specifier: workspace:*
+        version: link:packages/indexer
+      '@twograph/retrieval':
+        specifier: workspace:*
+        version: link:packages/retrieval
+      '@twograph/store':
+        specifier: workspace:*
+        version: link:packages/store
+      '@twograph/vector':
+        specifier: workspace:*
+        version: link:packages/vector
       '@types/node':
         specifier: ^26.1.1
         version: 26.1.1

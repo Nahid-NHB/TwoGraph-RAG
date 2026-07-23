@@ -14,3 +14,4 @@ coverage/
 .vscode/*
 !.vscode/extensions.json
 models/*.onnx
+scripts/bench/results/

@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-07-23T12:50:37.439Z",
+  "metrics": {
+    "indexing.throughputFilesPerSec": {
+      "value": 22.49853773112734,
+      "unit": "files/s",
+      "direction": "higher-is-better"
+    },
+    "indexing.incrementalLatencyMs": {
+      "value": 118.42241300000023,
+      "unit": "ms",
+      "direction": "lower-is-better"
+    },
+    "retrieval.hybridSearchP95Ms": {
+      "value": 38.883379999999306,
+      "unit": "ms",
+      "direction": "lower-is-better"
+    },
+    "retrieval.recallAt5": {
+      "value": 1,
+      "unit": "ratio",
+      "direction": "higher-is-better"
+    },
+    "retrieval.citationPrecisionAt5": {
+      "value": 0.5428571428571428,
+      "unit": "ratio",
+      "direction": "higher-is-better"
+    }
+  }
+}

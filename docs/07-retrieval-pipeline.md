@@ -55,3 +55,5 @@ System prompt requires: answer only from context; cite every claim as `[S#]`; sa
 ## 8. Evaluation hooks
 
 Golden-question set over `examples/sample-repo` (question → expected files/symbols); recall@k and citation-precision tracked in benchmark CI to catch retrieval regressions.
+
+Implemented in `scripts/bench/` (issue #70): `pnpm bench` runs indexing throughput/latency (NFR-1/2) and this retrieval eval (NFR-3, recall@5, precision@5) against a real Memgraph/Qdrant-backed index of the sample repo, writes a JSON report to `scripts/bench/results/latest.json`, and gates on >20% regression vs the committed `scripts/bench/baseline.json`.

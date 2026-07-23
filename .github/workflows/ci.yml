@@ -43,6 +43,7 @@ jobs:
       - run: docker compose up -d --wait
       - run: pnpm build
       - run: pnpm test:int
+      - run: pnpm bench
       - if: always()
         run: docker compose down -v
 

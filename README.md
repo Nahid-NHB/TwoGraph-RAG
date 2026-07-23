@@ -73,6 +73,7 @@ Every tool takes a `repo` argument — the absolute path to an already-indexed r
 pnpm install
 docker compose up -d   # Memgraph + Qdrant
 pnpm test
+pnpm build && pnpm bench   # indexing + retrieval benchmarks vs scripts/bench/baseline.json
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Work is organized into 10 milestones; every change lands as one PR closing one issue.
