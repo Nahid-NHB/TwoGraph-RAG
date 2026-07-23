@@ -152,7 +152,8 @@ export async function writeDependencyGraph(
          SET d.repoId = $repo, d.name = $name, d.declared = true, d.depKind = $kind, d.versionRange = $versionRange
          WITH d
          MATCH (p:Package {id: $packageId})
-         MERGE (p)-[:DEPENDS_ON]->(d)`,
+         MERGE (p)-[r:DEPENDS_ON]->(d)
+         SET r.versionRange = $versionRange`,
         {
           depId: `${repo}::dep::${dep.name}`,
           repo,
@@ -230,13 +231,18 @@ export async function findDependencyMismatches(
 }
 
 export const dependencyNodeSchema = z.object({
+  id: z.string(),
   name: z.string(),
   depKind: z.string().nullable(),
   declared: z.boolean(),
+  /** Version range as declared in package.json (e.g. `^18.2.0`) — null for a
+   * phantom dependency that's only ever been observed via IMPORTS. */
+  versionRange: z.string().nullable(),
   importCount: z.number(),
 });
 
 export const packageNodeSchema = z.object({
+  id: z.string(),
   path: z.string(),
   name: z.string(),
   version: z.string().nullable(),
@@ -247,9 +253,17 @@ export const configurationNodeSchema = z.object({
   configKind: z.string(),
 });
 
+/** A package→dependency DEPENDS_ON edge (issue #62's deps graph view). */
+export const dependencyEdgeSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  versionRange: z.string().nullable(),
+});
+
 export const dependencyReportSchema = z.object({
   packages: z.array(packageNodeSchema),
   dependencies: z.array(dependencyNodeSchema),
+  edges: z.array(dependencyEdgeSchema),
   configurations: z.array(configurationNodeSchema),
   mismatches: z.array(dependencyMismatchSchema),
 });
@@ -263,9 +277,9 @@ export async function analyzeDependencies(
 ): Promise<DependencyReport> {
   await writeDependencyGraph(client, repo, rootPath);
 
-  const [packageRows, dependencyRows, configRows, mismatches] = await Promise.all([
+  const [packageRows, dependencyRows, edgeRows, configRows, mismatches] = await Promise.all([
     client.run(
-      `MATCH (p:Package {repoId: $repo}) RETURN p.path AS path, p.name AS name, p.version AS version`,
+      `MATCH (p:Package {repoId: $repo}) RETURN p.id AS id, p.path AS path, p.name AS name, p.version AS version`,
       {
         repo,
       },
@@ -273,7 +287,13 @@ export async function analyzeDependencies(
     client.run(
       `MATCH (d:Dependency {repoId: $repo})
        OPTIONAL MATCH (f)-[:IMPORTS]->(d)
-       RETURN d.name AS name, d.depKind AS depKind, d.declared AS declared, count(f) AS importCount`,
+       RETURN d.id AS id, d.name AS name, d.depKind AS depKind, d.declared AS declared,
+              d.versionRange AS versionRange, count(f) AS importCount`,
+      { repo },
+    ),
+    client.run(
+      `MATCH (p:Package {repoId: $repo})-[r:DEPENDS_ON]->(d:Dependency)
+       RETURN p.id AS from, d.id AS to, r.versionRange AS versionRange`,
       { repo },
     ),
     client.run(
@@ -287,15 +307,23 @@ export async function analyzeDependencies(
 
   return {
     packages: packageRows.map((r) => ({
+      id: r.get('id') as string,
       path: r.get('path') as string,
       name: r.get('name') as string,
       version: r.get('version') as string | null,
     })),
     dependencies: dependencyRows.map((r) => ({
+      id: r.get('id') as string,
       name: r.get('name') as string,
       depKind: r.get('depKind') as string | null,
       declared: Boolean(r.get('declared')),
+      versionRange: r.get('versionRange') as string | null,
       importCount: r.get('importCount') as number,
+    })),
+    edges: edgeRows.map((r) => ({
+      from: r.get('from') as string,
+      to: r.get('to') as string,
+      versionRange: r.get('versionRange') as string | null,
     })),
     configurations: configRows.map((r) => ({
       path: r.get('path') as string,

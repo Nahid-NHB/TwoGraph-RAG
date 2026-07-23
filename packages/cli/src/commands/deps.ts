@@ -13,7 +13,7 @@ function render(report: DependencyReport, io: ProgramIo): void {
   );
   for (const dep of report.dependencies) {
     io.out(
-      `  ${dep.name.padEnd(30)} ${(dep.depKind ?? '?').padEnd(8)} imports=${String(dep.importCount)}`,
+      `  ${dep.name.padEnd(30)} ${(dep.depKind ?? '?').padEnd(8)} ${(dep.versionRange ?? '-').padEnd(10)} imports=${String(dep.importCount)}`,
     );
   }
   if (report.configurations.length > 0) {

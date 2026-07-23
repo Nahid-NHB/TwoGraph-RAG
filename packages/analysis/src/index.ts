@@ -14,6 +14,7 @@ export {
   dependencyReportSchema,
   dependencyMismatchSchema,
   dependencyNodeSchema,
+  dependencyEdgeSchema,
   packageNodeSchema,
   configurationNodeSchema,
   type DependencyReport,

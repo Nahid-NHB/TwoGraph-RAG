@@ -242,6 +242,88 @@ export function useRevertEdit(repoId: string | undefined) {
   });
 }
 
+export function useDependencies(repoId: string | undefined) {
+  return useQuery({
+    queryKey: ['deps', repoId],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/v1/repos/{repo}/deps', {
+        params: { path: { repo: repoId! } },
+      });
+      if (error) throw apiError(error);
+      return data;
+    },
+    enabled: Boolean(repoId),
+  });
+}
+
+export function useDeadCode(repoId: string | undefined) {
+  return useQuery({
+    queryKey: ['deadcode', repoId],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/v1/repos/{repo}/deadcode', {
+        params: { path: { repo: repoId! } },
+      });
+      if (error) throw apiError(error);
+      return data;
+    },
+    enabled: Boolean(repoId),
+  });
+}
+
+export function useCallers(
+  repoId: string | undefined,
+  symbolId: string | undefined,
+  depth: number,
+) {
+  return useQuery({
+    queryKey: ['symbols', 'callers', repoId, symbolId, depth],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/v1/repos/{repo}/symbols/{id}/callers', {
+        params: { path: { repo: repoId!, id: symbolId! }, query: { depth } },
+      });
+      if (error) throw apiError(error);
+      return data;
+    },
+    enabled: Boolean(repoId) && Boolean(symbolId),
+  });
+}
+
+export function useCallees(
+  repoId: string | undefined,
+  symbolId: string | undefined,
+  depth: number,
+) {
+  return useQuery({
+    queryKey: ['symbols', 'callees', repoId, symbolId, depth],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/v1/repos/{repo}/symbols/{id}/callees', {
+        params: { path: { repo: repoId!, id: symbolId! }, query: { depth } },
+      });
+      if (error) throw apiError(error);
+      return data;
+    },
+    enabled: Boolean(repoId) && Boolean(symbolId),
+  });
+}
+
+export function useComponentUsage(
+  repoId: string | undefined,
+  componentId: string | undefined,
+  depth: number,
+) {
+  return useQuery({
+    queryKey: ['components', 'usage', repoId, componentId, depth],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/v1/repos/{repo}/components/{id}/usage', {
+        params: { path: { repo: repoId!, id: componentId! }, query: { depth } },
+      });
+      if (error) throw apiError(error);
+      return data;
+    },
+    enabled: Boolean(repoId) && Boolean(componentId),
+  });
+}
+
 export function useSubgraph(
   repoId: string | undefined,
   root: string | undefined,

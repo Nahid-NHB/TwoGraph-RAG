@@ -69,7 +69,20 @@ describe('analyzeDependencies (issue #68)', () => {
     for (const used of ['axios', 'express', 'react', 'react-dom', 'react-router-dom']) {
       expect(byName.get(used)).toMatchObject({ declared: true });
       expect(byName.get(used)?.importCount).toBeGreaterThan(0);
+      expect(byName.get(used)?.versionRange).toEqual(expect.any(String));
     }
+    // lodash is a phantom (imported, never declared) — no package ever
+    // DEPENDS_ON'd it, so it has no versionRange and no edge at all.
+    expect(byName.get('lodash')?.versionRange).toBeNull();
+
+    const [pkg] = report.packages;
+    expect(pkg).toBeDefined();
+    const reactEdge = report.edges.find(
+      (e) => e.from === pkg!.id && e.to === byName.get('react')!.id,
+    );
+    expect(reactEdge).toBeDefined();
+    expect(reactEdge?.versionRange).toEqual(expect.any(String));
+    expect(report.edges.some((e) => e.to === byName.get('lodash')!.id)).toBe(false);
 
     const mismatchKinds = new Map(report.mismatches.map((m) => [m.name, m.kind]));
     expect(mismatchKinds.get('lodash')).toBe('phantom');

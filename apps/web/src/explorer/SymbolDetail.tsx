@@ -1,5 +1,5 @@
 import Editor from '@monaco-editor/react';
-import { GitBranch, Network } from 'lucide-react';
+import { GitBranch, ListTree, Network } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSymbolDetail } from '../api/hooks.js';
 import { useTheme } from '../theme/theme-context.js';
@@ -61,6 +61,17 @@ export function SymbolDetail({ repoId, symbolId }: { repoId: string; symbolId: s
               className="flex items-center gap-1 rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
             >
               <Network size={12} /> View in graph
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                void navigate(
+                  `/${repoId}/tree?root=${encodeURIComponent(symbolId)}&dir=${symbol.kind === 'Component' ? 'component' : 'callers'}`,
+                )
+              }
+              className="flex items-center gap-1 rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+            >
+              <ListTree size={12} /> {symbol.kind === 'Component' ? 'Usage tree' : 'Call tree'}
             </button>
           </div>
         </div>

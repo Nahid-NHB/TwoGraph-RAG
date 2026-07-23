@@ -1306,15 +1306,23 @@ export interface paths {
                     content: {
                         "application/json": {
                             packages: {
+                                id: string;
                                 path: string;
                                 name: string;
                                 version: string | null;
                             }[];
                             dependencies: {
+                                id: string;
                                 name: string;
                                 depKind: string | null;
                                 declared: boolean;
+                                versionRange: string | null;
                                 importCount: number;
+                            }[];
+                            edges: {
+                                from: string;
+                                to: string;
+                                versionRange: string | null;
                             }[];
                             configurations: {
                                 path: string;
@@ -1334,6 +1342,71 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/repos/{repo}/optimize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        symbolId: string;
+                        apply?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            symbolId: string;
+                            findings: {
+                                ruleId: string;
+                                message: string;
+                                line: number;
+                                /** @enum {string} */
+                                severity: "info" | "warning";
+                            }[];
+                            advice: string;
+                            suggestedPatch: {
+                                /** @enum {string} */
+                                operation: "apply_patch";
+                                params: {
+                                    file: string;
+                                    startLine: number;
+                                    endLine: number;
+                                    newText: string;
+                                };
+                            } | null;
+                            editId: string | null;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
