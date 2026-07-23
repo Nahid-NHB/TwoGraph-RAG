@@ -27,6 +27,9 @@ jobs:
       - run: pnpm build
       - run: pnpm --filter @twograph/web build
       - run: pnpm test
+      # Proves every publishable package's files/exports/bin fields still
+      # pack correctly (issue #74) without ever touching the real registry.
+      - run: pnpm -r publish --dry-run --no-git-checks
 
   integration:
     name: Integration tests
