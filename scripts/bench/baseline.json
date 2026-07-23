@@ -1,18 +1,18 @@
 {
-  "timestamp": "2026-07-23T12:50:37.439Z",
+  "timestamp": "2026-07-23T13:49:05.566Z",
   "metrics": {
     "indexing.throughputFilesPerSec": {
-      "value": 22.49853773112734,
+      "value": 15.883364800123523,
       "unit": "files/s",
       "direction": "higher-is-better"
     },
     "indexing.incrementalLatencyMs": {
-      "value": 118.42241300000023,
+      "value": 172.3679259999999,
       "unit": "ms",
       "direction": "lower-is-better"
     },
     "retrieval.hybridSearchP95Ms": {
-      "value": 38.883379999999306,
+      "value": 64.64488900000015,
       "unit": "ms",
       "direction": "lower-is-better"
     },
@@ -24,6 +24,21 @@
     "retrieval.citationPrecisionAt5": {
       "value": 0.5428571428571428,
       "unit": "ratio",
+      "direction": "higher-is-better"
+    },
+    "caching.graphQueryColdMs": {
+      "value": 3.971674999998868,
+      "unit": "ms",
+      "direction": "lower-is-better"
+    },
+    "caching.graphQueryWarmMs": {
+      "value": 0.026719000001321547,
+      "unit": "ms",
+      "direction": "lower-is-better"
+    },
+    "caching.graphQuerySpeedupX": {
+      "value": 148.64609453207174,
+      "unit": "x",
       "direction": "higher-is-better"
     }
   }

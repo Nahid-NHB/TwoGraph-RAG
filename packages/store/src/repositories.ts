@@ -8,6 +8,7 @@ export interface RepoRow {
   name: string;
   created_at: string;
   last_indexed: string | null;
+  generation: number;
 }
 
 export interface FileRow {
@@ -114,6 +115,23 @@ export class MetadataStore {
 
   touchRepository(id: string): void {
     this.db.prepare(`UPDATE repositories SET last_indexed = datetime('now') WHERE id = ?`).run(id);
+  }
+
+  /**
+   * Monotonic "index version" (issue #71): read-only lookup for cache keys —
+   * results computed against generation N stay valid until the next
+   * {@link bumpRepoGeneration} call, which happens whenever an index run
+   * actually changes something.
+   */
+  repoGeneration(id: string): number {
+    const row = this.db.prepare(`SELECT generation FROM repositories WHERE id = ?`).get(id) as
+      Pick<RepoRow, 'generation'> | undefined;
+    return row?.generation ?? 0;
+  }
+
+  bumpRepoGeneration(id: string): number {
+    this.db.prepare(`UPDATE repositories SET generation = generation + 1 WHERE id = ?`).run(id);
+    return this.repoGeneration(id);
   }
 
   // ---- files & symbols ----

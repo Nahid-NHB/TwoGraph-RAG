@@ -191,7 +191,11 @@ describe('@twograph/server chat routes', () => {
     const res = await app.inject({
       method: 'POST',
       url: `/v1/repos/${repoId}/chat/sessions/${session.id}/messages`,
-      payload: { question: 'who calls verifyToken?' },
+      // A question distinct from other tests' — the multiquery rewrite is
+      // cached per (repo, index version, question) (issue #71), and a cache
+      // hit would skip an llm.complete() call, throwing off this file's
+      // 2-calls-per-test fixture cycle on the shared `mockLlm`.
+      payload: { question: 'what does listUsersHandler require?' },
     });
     expect(res.statusCode).toBe(200);
     const body = res.json<{ content: string; citations: unknown[]; groundedContext: boolean }>();
@@ -235,7 +239,9 @@ describe('@twograph/server chat routes', () => {
     const res = await fetch(`${baseUrl}/v1/repos/${repoId}/chat/sessions/${session.id}/messages`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
-      body: JSON.stringify({ question: 'who calls verifyToken?' }),
+      // Distinct question — see the note in the non-streaming test above about
+      // why a repeated question would desync this file's fixture cycle.
+      body: JSON.stringify({ question: 'describe the jwt verification flow' }),
       signal: controller.signal,
     });
 

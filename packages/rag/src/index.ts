@@ -3,6 +3,7 @@ export {
   generateMultiQuery,
   multiQueryResultSchema,
   type GraphIntent,
+  type MultiQueryCache,
   type MultiQueryOutput,
   type MultiQueryResult,
 } from './multiquery.js';

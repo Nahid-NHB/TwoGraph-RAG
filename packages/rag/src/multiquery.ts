@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { LruCache } from '@twograph/core';
 import type { QUERY_TEMPLATES } from '@twograph/graph';
 import type { LlmProvider } from '@twograph/llm';
 
@@ -86,21 +87,39 @@ function parseQueries(content: string): MultiQueryOutput | undefined {
   return result.success ? result.data : undefined;
 }
 
+export interface MultiQueryCache {
+  store: LruCache<string, MultiQueryResult>;
+  /** Typically `${repo}:${indexVersion}:${question}` (issue #71) — the LLM
+   * rewrite of a question only depends on the question text and what's in
+   * the index, so it's safe to reuse across requests as long as neither
+   * changed. */
+  key: string;
+}
+
 /**
  * Rewrites a question into diverse queries and detects graph intents (issue
  * #43, docs/07 §1). Failure-safe: any LLM error or malformed/invalid output
  * falls back to the original question alone — the graph intent (if any) is
  * always detected regardless, since it's a pure pattern match.
+ *
+ * `cache` is opt-in (issue #71): when given, a hit skips the LLM call
+ * entirely. Callers key it by index version so a reindex naturally stops
+ * serving a stale rewrite.
  */
 export async function generateMultiQuery(
   llm: LlmProvider,
   question: string,
   signal?: AbortSignal,
+  cache?: MultiQueryCache,
 ): Promise<MultiQueryResult> {
+  const cached = cache?.store.get(cache.key);
+  if (cached) return cached;
+
   const graphIntent = detectGraphIntent(question);
+  let result: MultiQueryResult;
 
   try {
-    const result = await llm.complete({
+    const completion = await llm.complete({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: question },
@@ -109,16 +128,18 @@ export async function generateMultiQuery(
       maxTokens: 300,
       ...(signal ? { signal } : {}),
     });
-    const parsed = parseQueries(result.content);
-    if (parsed) {
-      return { queries: parsed.queries, ...(graphIntent ? { graphIntent } : {}), usedLlm: true };
-    }
+    const parsed = parseQueries(completion.content);
+    result = parsed
+      ? { queries: parsed.queries, ...(graphIntent ? { graphIntent } : {}), usedLlm: true }
+      : { queries: [question], ...(graphIntent ? { graphIntent } : {}), usedLlm: false };
   } catch (err) {
     // A caller-initiated abort should halt the whole pipeline, not be
     // absorbed as an ordinary LLM failure (issue #47).
     if (signal?.aborted) throw err;
     // Fall through to the failure-safe fallback below.
+    result = { queries: [question], ...(graphIntent ? { graphIntent } : {}), usedLlm: false };
   }
 
-  return { queries: [question], ...(graphIntent ? { graphIntent } : {}), usedLlm: false };
+  cache?.store.set(cache.key, result);
+  return result;
 }

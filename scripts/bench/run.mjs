@@ -7,6 +7,7 @@
 //   pnpm bench                  # run + gate against scripts/bench/baseline.json
 //   pnpm bench --update-baseline  # run + overwrite the committed baseline
 import { setupBenchFixture } from './lib/setup.mjs';
+import { runCachingBench } from './caching.bench.mjs';
 import { runIndexingBench } from './indexing.bench.mjs';
 import { runRetrievalBench } from './retrieval.bench.mjs';
 import {
@@ -31,6 +32,7 @@ try {
   const metrics = {
     ...(await runIndexingBench(fixture)),
     ...(await runRetrievalBench(fixture)),
+    ...(await runCachingBench(fixture)),
   };
   const report = { timestamp: new Date().toISOString(), metrics };
   writeLatestResult(report);

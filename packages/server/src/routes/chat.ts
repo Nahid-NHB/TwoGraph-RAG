@@ -67,6 +67,10 @@ function pipelineDeps(repo: RegisteredRepo): RagPipelineDeps {
         .split('\n')
         .slice(startLine - 1, endLine)
         .join('\n'),
+    // Per-repo, process-lifetime caches (issue #71) — safe to reuse across
+    // requests since every entry is keyed by the repo's current index version.
+    searchCache: repo.searchCache,
+    multiQueryCache: repo.multiQueryCache,
   };
 }
 
@@ -75,6 +79,7 @@ function pipelineOptions(repo: RegisteredRepo): RagPipelineOptions {
     repo: repo.id,
     rerankEnabled: repo.config.retrieval.rerank,
     tokenBudget: repo.config.retrieval.contextTokenBudget,
+    indexVersion: repo.store.repoGeneration(repo.id),
   };
 }
 
