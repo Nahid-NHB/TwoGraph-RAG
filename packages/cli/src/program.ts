@@ -1,17 +1,14 @@
 import { Command } from 'commander';
 import { runDeadCode } from './commands/deadcode.js';
 import { runDeps } from './commands/deps.js';
+import { runGraph } from './commands/graph.js';
 import { runInit } from './commands/init.js';
 import { runIndex } from './commands/index-repo.js';
 import { runMcp } from './commands/mcp.js';
 import { runOptimize } from './commands/optimize.js';
 import { runQuery } from './commands/query.js';
 import { runSearch } from './commands/search.js';
-
-const NOT_IMPLEMENTED: ReadonlyArray<{ name: string; args: string; description: string }> = [
-  { name: 'graph', args: '<template>', description: 'Run a graph query template' },
-  { name: 'serve', args: '', description: 'Start the REST API server' },
-];
+import { runServe } from './commands/serve.js';
 
 export interface ProgramIo {
   out(line: string): void;
@@ -108,13 +105,22 @@ export function buildProgram(io: ProgramIo = { out: console.log, err: console.er
       await runOptimize(process.cwd(), symbolId, { ...opts, json }, io);
     });
 
-  for (const cmd of NOT_IMPLEMENTED) {
-    const c = program.command(`${cmd.name} ${cmd.args}`.trim()).description(cmd.description);
-    c.allowUnknownOption(true).action(() => {
-      io.err(`"twograph ${cmd.name}" is not implemented yet — track progress on GitHub issues.`);
-      process.exitCode = 2;
+  program
+    .command('serve')
+    .description('Start the REST API server (repos register at runtime via POST /v1/repos)')
+    .option('--port <n>', 'port to listen on (default: config server.port, else 4801)')
+    .action(async (opts: { port?: string }) => {
+      await runServe(process.cwd(), opts, io);
     });
-  }
+
+  program
+    .command('graph <template>')
+    .description('Run a named, safe graph query template (see docs/05-graph-schema.md)')
+    .option('--param <kv...>', 'template param as key=value (repeatable)')
+    .action(async (template: string, opts: { param?: string[] }) => {
+      const json = Boolean(program.opts()['json']);
+      await runGraph(process.cwd(), template, { ...opts, json }, io);
+    });
 
   return program;
 }

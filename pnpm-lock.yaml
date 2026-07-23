@@ -239,6 +239,9 @@ importers:
       '@twograph/retrieval':
         specifier: workspace:*
         version: link:../retrieval
+      '@twograph/server':
+        specifier: workspace:*
+        version: link:../server
       '@twograph/store':
         specifier: workspace:*
         version: link:../store

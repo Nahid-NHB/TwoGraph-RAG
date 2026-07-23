@@ -16,6 +16,7 @@
     { "path": "../rag/tsconfig.build.json" },
     { "path": "../mcp/tsconfig.build.json" },
     { "path": "../analysis/tsconfig.build.json" },
-    { "path": "../editing/tsconfig.build.json" }
+    { "path": "../editing/tsconfig.build.json" },
+    { "path": "../server/tsconfig.build.json" }
   ]
 }

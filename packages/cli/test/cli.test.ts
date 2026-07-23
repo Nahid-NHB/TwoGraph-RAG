@@ -42,14 +42,4 @@ describe('program surface', () => {
       expect(names).toContain(expected);
     }
   });
-
-  it('stub commands exit with code 2 and explain themselves', async () => {
-    const errs: string[] = [];
-    const program = buildProgram({ out: () => {}, err: (l) => errs.push(l) });
-    program.exitOverride();
-    await program.parseAsync(['node', 'twograph', 'graph', 'who_calls']);
-    expect(process.exitCode).toBe(2);
-    process.exitCode = 0;
-    expect(errs.join('\n')).toMatch(/not implemented/);
-  });
 });

@@ -30,6 +30,7 @@
     "@twograph/mcp": "workspace:*",
     "@twograph/rag": "workspace:*",
     "@twograph/retrieval": "workspace:*",
+    "@twograph/server": "workspace:*",
     "@twograph/store": "workspace:*",
     "@twograph/vector": "workspace:*",
     "commander": "^14.0.2"
