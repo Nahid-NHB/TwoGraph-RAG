@@ -1,6 +1,6 @@
 {
   "name": "@twograph/editing",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "AST-based edit operations: scoped ts-morph engine, EditPlan, diff preview",
   "license": "MIT",
   "type": "module",

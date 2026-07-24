@@ -1,6 +1,6 @@
 {
   "name": "@twograph/graph",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Memgraph knowledge-graph client, schema bootstrap, writers, and typed queries",
   "license": "MIT",
   "type": "module",

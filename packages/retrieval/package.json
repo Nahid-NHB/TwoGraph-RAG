@@ -1,6 +1,6 @@
 {
   "name": "@twograph/retrieval",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Retriever contract plus BM25, vector, graph, fusion, and reranking",
   "license": "MIT",
   "type": "module",

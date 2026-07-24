@@ -1,6 +1,6 @@
 {
   "name": "@twograph/parser",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Tree-sitter based parsing and extraction for JS/TS/JSX/TSX",
   "license": "MIT",
   "type": "module",

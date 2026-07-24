@@ -1,6 +1,6 @@
 {
   "name": "@twograph/vector",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Embedding providers (UniXcoder/ONNX), symbol-aware chunking, and Qdrant vector store",
   "license": "MIT",
   "type": "module",

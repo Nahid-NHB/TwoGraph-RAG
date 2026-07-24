@@ -1,6 +1,6 @@
 {
   "name": "@twograph/cli",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "TwoGraph-RAG command line interface",
   "license": "MIT",
   "type": "module",

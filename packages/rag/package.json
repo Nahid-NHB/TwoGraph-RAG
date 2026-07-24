@@ -1,6 +1,6 @@
 {
   "name": "@twograph/rag",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Multi-query generation, RAG pipeline, grounding, and chat sessions",
   "license": "MIT",
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "@twograph/llm",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Provider-agnostic LLM interface with OpenAI, Anthropic, and mock implementations",
   "license": "MIT",
   "type": "module",

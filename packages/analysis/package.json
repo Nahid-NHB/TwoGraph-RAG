@@ -1,6 +1,6 @@
 {
   "name": "@twograph/analysis",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Static analysis: dead code, dependency graph, optimization advisor",
   "license": "MIT",
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "@twograph/indexer",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "End-to-end indexing pipeline: discover, diff, parse, graph, chunk, embed",
   "license": "MIT",
   "type": "module",

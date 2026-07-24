@@ -1,6 +1,6 @@
 {
   "name": "@twograph/store",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "SQLite metadata store (files, symbols, chunks, edits, chat) with FTS5 BM25",
   "license": "MIT",
   "type": "module",
