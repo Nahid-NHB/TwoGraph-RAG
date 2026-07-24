@@ -37,19 +37,52 @@ node ../../packages/cli/dist/main.js index     # parses, builds the graph, embed
 node ../../packages/cli/dist/main.js search "verify jwt token"   # no LLM needed
 ```
 
-`search` works out of the box — semantic embedding is fully local (ONNX) by default. `query` (grounded RAG "ask") needs an LLM: set `ANTHROPIC_API_KEY` (default provider) or edit `.twograph/config.json`'s `llm` block to switch to `openai`/`gemini`/`ollama`/`openrouter`, then:
+`search` works out of the box — semantic embedding is fully local (ONNX) by default. `query` (grounded RAG "ask") needs an LLM: set `OPENROUTER_API_KEY` (default provider, [free tier available](https://openrouter.ai/models?max_price=0)) or edit `.twograph/config.json`'s `llm` block to switch to `anthropic`/`openai`/`gemini`/`ollama`, then:
 
 ```bash
-export ANTHROPIC_API_KEY=sk-...
+export OPENROUTER_API_KEY=sk-or-...
 node ../../packages/cli/dist/main.js query "how does authentication work?"
 ```
 
-Want the web UI instead of the terminal? From the repo root:
+## Running the server + web UI locally
 
-```bash
-node packages/cli/dist/main.js serve &          # REST API on :4801
-pnpm --filter @twograph/web dev                 # opens on :5173, register the repo's path in the UI
-```
+1. **Datastores** — start Memgraph and Qdrant (skip if already running from the quickstart above):
+
+   ```bash
+   docker compose up -d
+   ```
+
+2. **Build** the workspace (needed once, and again after pulling code changes):
+
+   ```bash
+   pnpm build
+   ```
+
+3. **Configure env vars** — copy the template and fill in what you need:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   - Set the API key for whichever `llm.provider` you use (`OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GEMINI_API_KEY`) — not needed for `ollama` or if you only use `search`.
+   - Set `HF_TOKEN` (free, from [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)) — the default local embedder downloads its ONNX model from Hugging Face on first use, and anonymous requests are frequently rate-limited/blocked (`401 Unauthorized`). A free read-only token fixes this.
+
+4. **Start the REST API server** (reads `.env`, so either `export` its contents first or run via a tool like `dotenv`/`direnv`):
+
+   ```bash
+   set -a && source .env && set +a
+   node packages/cli/dist/main.js serve &     # REST API on :4801
+   ```
+
+5. **Start the web UI**, in a separate terminal from the repo root:
+
+   ```bash
+   pnpm --filter @twograph/web dev            # opens on :5173
+   ```
+
+6. Open `http://localhost:5173`, register a repository by its **absolute path** (e.g. `/home/you/projects/my-repo`), then index it from the UI before chatting/searching.
+
+Changed code in `packages/*`? Re-run `pnpm build` and restart the `serve` process (step 4) to pick it up — the web dev server (step 5) hot-reloads on its own.
 
 ## Capabilities
 

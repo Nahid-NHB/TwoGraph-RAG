@@ -14,7 +14,7 @@ export const configSchema = z
         baseUrl: z.string().optional(),
       })
       .strict()
-      .default({ provider: 'anthropic', model: 'claude-sonnet-5' }),
+      .default({ provider: 'openrouter', model: 'google/gemini-2.0-flash-exp:free' }),
     embedder: z.object({ provider: z.string() }).strict().default({ provider: 'unixcoder-onnx' }),
     memgraph: z.object({ uri: z.string() }).strict().default({ uri: 'bolt://localhost:7687' }),
     qdrant: z.object({ url: z.string() }).strict().default({ url: 'http://localhost:6333' }),
